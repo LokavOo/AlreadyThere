@@ -1,0 +1,78 @@
+{
+  "_说明": "生产者1 用 DeepSeek，生产者2 用 Kimi，审查者用豆包。第一期三家都关闭深度思考（extra 一栏），条件一致也更省钱。密钥不写在这里，写在 密钥.env。 1.4：每个角色可设 memory（记忆模式）：全局 / 固定 / 全新，默认生产者\"固定\"（只看自己上一轮）、审查者\"全局\"。",
+  "roles": {
+    "P1": {
+      "kind": "生产者",
+      "provider": "openai_compat",
+      "base_url": "https://api.deepseek.com",
+      "key_name": "DEEPSEEK_API_KEY",
+      "model": "deepseek-v4-pro",
+      "series": "DeepSeek",
+      "context_window": 128000,
+      "extra": {
+        "thinking": {
+          "type": "disabled"
+        }
+      },
+      "memory": {
+        "mode": "固定",
+        "see": [
+          "self"
+        ],
+        "rounds": 1
+      }
+    },
+    "P2": {
+      "kind": "生产者",
+      "provider": "openai_compat",
+      "base_url": "https://api.moonshot.cn/v1",
+      "key_name": "MOONSHOT_API_KEY",
+      "model": "kimi-k2.6",
+      "series": "Kimi",
+      "context_window": 256000,
+      "extra": {
+        "thinking": {
+          "type": "disabled"
+        }
+      },
+      "memory": {
+        "mode": "固定",
+        "see": [
+          "self"
+        ],
+        "rounds": 1
+      }
+    },
+    "R1": {
+      "kind": "审查者",
+      "provider": "openai_compat",
+      "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+      "key_name": "ARK_API_KEY",
+      "model": "doubao-seed-2-1-pro-260915",
+      "series": "豆包",
+      "context_window": 128000,
+      "extra": {
+        "thinking": {
+          "type": "disabled"
+        }
+      },
+      "memory": {
+        "mode": "全局"
+      }
+    }
+  },
+  "search": {
+    "engine": "tavily",
+    "key_name": "TAVILY_API_KEY"
+  },
+  "params": {
+    "max_rounds": 6,
+    "items_per_call": 6,
+    "search_results_per_query": 3
+  },
+  "_memory说明": {
+    "全局": "能看到所有生产者之前的结果和意见原文",
+    "固定": "只看 see 里列出的角色（self 表示自己），最近 rounds 轮",
+    "全新": "每轮从头开始：只看问题、口径、本轮检索和针对自己的意见（意见里不含对方的数值和出处）"
+  }
+}

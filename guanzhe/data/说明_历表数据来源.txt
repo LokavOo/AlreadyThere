@@ -1,0 +1,10 @@
+历表数据来源与许可
+
+文件：cn_calendar.json.gz
+来源：法鼓文理学院（Dharma Drum Institute of Liberal Arts, DILA；原法鼓佛教学院 DDBC）
+      时间规范资料库（Buddhist Studies Time Authority Database），authority_time 2012-02 版。
+许可：CC BY-SA 3.0（署名—相同方式共享），全文见同目录 cn_calendar_COPYING.txt。
+      注：该数据的 Zenodo 页面标注为 CC BY，压缩包内 COPYING 文件写的是 CC BY-SA 3.0，这里按较严格的 BY-SA 处理。
+
+观者自在所做的改动：只取了中国朝代的年号与月表（每个农历月第一天和最后一天的儒略日编号、闰月标记、年干支），
+改成紧凑的 JSON 并压缩，没有改动数值。本文件与数据按 CC BY-SA 3.0 另行授权，不影响程序代码本身的许可。
