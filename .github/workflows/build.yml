@@ -36,17 +36,27 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: 打包
+      - name: 打包（文件夹形式）
         run: |
           pip install pyinstaller
-          pyinstaller --onefile --name AlreadyThere --add-data "guanzhe/data;guanzhe/data" --add-data "guanzhe/app_page.html;guanzhe" entry.py
+          pyinstaller --onedir --name AlreadyThere --add-data "guanzhe/data;guanzhe/data" --add-data "guanzhe/app_page.html;guanzhe" entry.py
       - name: 用 exe 跑一遍演示项目（不联网、不花钱）
         shell: pwsh
         env:
           PYTHONIOENCODING: utf-8
         run: |
-          .\dist\AlreadyThere.exe demo smoke
+          .\dist\AlreadyThere\AlreadyThere.exe demo smoke
           if (-not (Test-Path "smoke\outputs\结论.md")) { throw "演示项目没有生成结论" }
+      - name: 用 exe 的窗口版新建演示项目（检查 exe 启动自己的情况）
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath ".\dist\AlreadyThere\AlreadyThere.exe" -ArgumentList "app","--no-window","--port","8765" -PassThru
+          Start-Sleep -Seconds 8
+          $body = '{"name":"smoke2","question":"__demo__"}'
+          $r = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8765/api/new" -Headers @{"X-Guanzhe"="1"} -ContentType "application/json" -Body $body
+          Stop-Process -Id $p.Id -Force
+          if (-not $r.ok) { throw "窗口版新建项目失败：$($r.msg)" }
+          if (-not (Test-Path "dist\数据\smoke2\outputs\结论.md")) { throw "窗口版新建的演示项目没有生成结论" }
       - name: 做下载包并附到发布页
         shell: pwsh
         env:
@@ -54,7 +64,8 @@ jobs:
         run: |
           $name = "AlreadyThere-${{ github.event.release.tag_name }}-windows"
           New-Item -ItemType Directory $name | Out-Null
-          Copy-Item dist\AlreadyThere.exe, 使用说明.md, 迭代记录.md, README.md $name
+          Copy-Item dist\AlreadyThere\* $name -Recurse
+          Copy-Item 使用说明.md, 迭代记录.md, README.md $name
           if (Test-Path LICENSE) { Copy-Item LICENSE $name }
           Copy-Item examples $name -Recurse
           Compress-Archive -Path $name -DestinationPath "$name.zip"
