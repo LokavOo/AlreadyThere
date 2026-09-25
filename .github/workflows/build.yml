@@ -1,0 +1,61 @@
+# 测试与发布（1.9）：每次推送在 Windows、Linux、Mac 上跑全部测试；
+# 发布（Release）时再在 Windows 上生成 exe，实际跑一遍演示项目，通过后才把下载包附到发布页。
+name: 测试与发布
+
+on:
+  push:
+  pull_request:
+  release:
+    types: [published]
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 单元测试
+        run: python -m unittest discover -s tests -v
+        env:
+          PYTHONIOENCODING: utf-8
+
+  exe:
+    needs: test
+    if: github.event_name == 'release'
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 打包
+        run: |
+          pip install pyinstaller
+          pyinstaller --onefile --name AlreadyThere --add-data "guanzhe/data;guanzhe/data" --add-data "guanzhe/app_page.html;guanzhe" entry.py
+      - name: 用 exe 跑一遍演示项目（不联网、不花钱）
+        shell: pwsh
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          .\dist\AlreadyThere.exe demo smoke
+          if (-not (Test-Path "smoke\outputs\结论.md")) { throw "演示项目没有生成结论" }
+      - name: 做下载包并附到发布页
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $name = "AlreadyThere-${{ github.event.release.tag_name }}-windows"
+          New-Item -ItemType Directory $name | Out-Null
+          Copy-Item dist\AlreadyThere.exe, 使用说明.md, 迭代记录.md, README.md $name
+          if (Test-Path LICENSE) { Copy-Item LICENSE $name }
+          Copy-Item examples $name -Recurse
+          Compress-Archive -Path $name -DestinationPath "$name.zip"
+          gh release upload "${{ github.event.release.tag_name }}" "$name.zip" --clobber
