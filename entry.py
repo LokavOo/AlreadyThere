@@ -14,7 +14,8 @@ if __name__ == "__main__":
     if not args:
         if getattr(sys, "frozen", False) and os.name == "nt":
             # 双击启动：另起一个不带黑色窗口的进程打开窗口版，自己退出
-            subprocess.Popen([sys.executable, "app"], creationflags=0x08000000 | 0x00000008)  # 无窗口 | 脱离
+            env = dict(os.environ, PYINSTALLER_RESET_ENVIRONMENT="1")  # 1.9.1：不沿用本进程的临时文件夹
+            subprocess.Popen([sys.executable, "app"], creationflags=0x08000000 | 0x00000008, env=env)  # 无窗口 | 脱离
             sys.exit(0)
         args = ["app"]
     main(args)
