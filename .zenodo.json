@@ -1,0 +1,25 @@
+{
+  "title": "观者自在 (AlreadyThere)：多模型互查的资料整理程序（原型第一期） / AlreadyThere: a multi-model cross-verification program for fact compilation (prototype phase 1)",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "LokavOo-"
+    }
+  ],
+  "license": "Apache-2.0",
+  "description": "<p>多个不同厂商的大模型各自检索、各自作答，另一模型逐条审查；凡程序能核对的一律由程序核对；全过程写入哈希链账本。原型第一期（1.x）。测试结果与前提条件见 README 与“测试记录”。</p><p>Several LLMs from different vendors search and answer independently while another model reviews each entry; everything checkable is checked by the program; the whole process is recorded in a hash-chained ledger. Prototype phase 1 (1.x). See the README and test records for results and conditions.</p><p>AI collaboration: design ideas formed in the author's conversations with DeepSeek, Doubao, Claude and ChatGPT; code written by Claude (Anthropic); DeepSeek, Kimi and Doubao served as program roles in test runs. Models are not listed as authors.</p>",
+  "related_identifiers": [
+    {
+      "identifier": "10.5281/zenodo.22938084",
+      "relation": "isSupplementTo",
+      "scheme": "doi"
+    }
+  ],
+  "keywords": [
+    "large language models",
+    "cross-verification",
+    "fact compilation",
+    "hallucination",
+    "audit trail"
+  ]
+}
