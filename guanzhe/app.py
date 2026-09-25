@@ -126,6 +126,8 @@ class App:
 
     def env(self):
         """子进程的环境：数据文件夹里运行，也要能找到程序。"""
+        if FROZEN:  # 1.9.1：exe 启动自己时，让打包工具从头准备运行环境，不沿用上一个进程的临时文件夹
+            return dict(os.environ, PYTHONIOENCODING="utf-8", PYINSTALLER_RESET_ENVIRONMENT="1")
         pp = os.environ.get("PYTHONPATH")
         return dict(os.environ, PYTHONIOENCODING="utf-8",
                     PYTHONPATH=str(self.prog) + (os.pathsep + pp if pp else ""))
