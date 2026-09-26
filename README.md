@@ -1,4 +1,4 @@
-# 观者自在 (AlreadyThere)
+<img width="940" height="455" alt="image" src="https://github.com/user-attachments/assets/0d7c352e-a260-4387-b743-293802a8ca29" /># 观者自在 (AlreadyThere)
 
 **多模型互查的资料整理程序 · 原型第一期（1.x，当前 v1.9）**
 **A multi-model cross-verification program for fact compilation · Prototype phase 1 (1.x, current v1.9)**
@@ -47,6 +47,7 @@
 ### 相关记录
 
 - 设计文档与迭代记录（Zenodo 记录 A，CC BY 4.0）：[doi.org/10.5281/zenodo.22938084](https://doi.org/10.5281/zenodo.22938084)
+- 本程序的存档（Zenodo 记录 B，全部版本通用）：[doi.org/10.5281/zenodo.22969156](https://doi.org/10.5281/zenodo.22969156)
 - 历表换算数据：法鼓文理学院时间规范资料库（DDBC/DILA），CC BY-SA 3.0，见 `guanzhe/data/`。
 
 ### AI 协作声明
@@ -102,6 +103,7 @@ Fault-finder, recorder and explainer roles, the admission gate (which screens qu
 ### Related records
 
 - Design documents and iteration records (Zenodo record A, CC BY 4.0): [doi.org/10.5281/zenodo.22938084](https://doi.org/10.5281/zenodo.22938084)
+- Archive of this program (Zenodo record B, all versions): [doi.org/10.5281/zenodo.22969156](https://doi.org/10.5281/zenodo.22969156)
 - Calendar conversion data: the Time Authority Database of the Dharma Drum Institute of Liberal Arts (DILA, formerly DDBC), CC BY-SA 3.0, in `guanzhe/data/`.
 
 ### AI collaboration statement
