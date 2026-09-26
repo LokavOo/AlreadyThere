@@ -1,6 +1,7 @@
-<img width="940" height="455" alt="image" src="https://github.com/user-attachments/assets/0d7c352e-a260-4387-b743-293802a8ca29" /># 观者自在 (AlreadyThere)
+# 观者自在 (AlreadyThere)
 
 **多模型互查的资料整理程序 · 原型第一期（1.x，当前 v1.9）**
+
 **A multi-model cross-verification program for fact compilation · Prototype phase 1 (1.x, current v1.9)**
 
 [中文](#中文) · [English](#english)
