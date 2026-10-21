@@ -1,5 +1,6 @@
 """2.4：答案三态（得出/部分得出/未得出）、宽松格式校验、终止也出结论、代码运行环境记录。"""
 
+import _winfix  # noqa: F401  Windows：测试结束时清理临时文件夹（见 _winfix.py）
 import json
 import tempfile
 import unittest

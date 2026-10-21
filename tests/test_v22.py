@@ -1,5 +1,6 @@
 """2.2 评审流程测试：python -m unittest discover -s tests"""
 
+import _winfix  # noqa: F401  Windows：测试结束时清理临时文件夹（见 _winfix.py）
 import json
 import re
 import tempfile

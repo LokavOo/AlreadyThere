@@ -1,5 +1,6 @@
 """2.9：主窗口输入框（建题）、插话（等这一步跑完后暂停，暂停中可连着补充，继续后所有角色都收到）、立刻停止不变。"""
 
+import _winfix  # noqa: F401  Windows：测试结束时清理临时文件夹（见 _winfix.py）
 import json
 import os
 import tempfile

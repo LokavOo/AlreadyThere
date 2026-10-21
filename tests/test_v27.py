@@ -1,6 +1,7 @@
 """2.7：表单阶段（只拆不改写、逐字核对、术语展开、隐含项、放行与冻结）、做题阶段只依据表单、
 分开审再对照、反驳够用即止、找茬者出场规则与复查、裸题对照、报告新统计、配置面板、豆包上限、回归题。"""
 
+import _winfix  # noqa: F401  Windows：测试结束时清理临时文件夹（见 _winfix.py）
 import json
 import re
 import shutil

@@ -1,5 +1,6 @@
 """2.6：代码运行设置中途修改入账（bug 修复）、接口实际返回的模型名、国产 3-2-1 阵容配置、界面复制与宽度分档。"""
 
+import _winfix  # noqa: F401  Windows：测试结束时清理临时文件夹（见 _winfix.py）
 import json
 import re
 import tempfile

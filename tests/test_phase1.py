@@ -1,5 +1,6 @@
 """第一期测试：python -m unittest discover -s tests"""
 
+import _winfix  # noqa: F401  Windows：测试结束时清理临时文件夹（见 _winfix.py）
 import json
 import re
 import shutil
@@ -560,10 +561,13 @@ class Test17(unittest.TestCase):
                 "k=aliases({'name':'明宣宗朱瞻基（宣德）','aliases':['宣宗','瞻基']});"
                 "t='宣宗朱瞻基生于建文元年二月初九日。'*3+'瞻基，1399年生。';"
                 "print(k, birth_windows(t,k,width=30,top=3))")
-        outs = {subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+        # 2.11：指定 UTF-8（Windows 默认按本地编码解码，含中文的输出解不出来，stdout 变成 None，四次"一致"而测试空过）
+        outs = {subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8",
                                cwd=Path(__file__).resolve().parents[1],
-                               env=dict(os.environ, PYTHONHASHSEED=str(s))).stdout for s in (1, 2, 3, 4)}
+                               env=dict(os.environ, PYTHONHASHSEED=str(s), PYTHONIOENCODING="utf-8")).stdout
+                for s in (1, 2, 3, 4)}
         self.assertEqual(len(outs), 1)
+        self.assertTrue(next(iter(outs)))  # 确实有输出
 
 
 class Test18(Tmp):

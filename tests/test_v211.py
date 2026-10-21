@@ -1,5 +1,6 @@
 """2.11：实时状态每次调用一条；思考循环检测（掐断→续写→从头重试一次→失败）；停止／直接打断时存下未完成调用已收到的内容。"""
 
+import _winfix  # noqa: F401  Windows：测试结束时清理临时文件夹（见 _winfix.py）
 import json
 import sqlite3
 import tempfile

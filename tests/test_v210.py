@@ -1,5 +1,6 @@
 """2.10：时间显示（气泡时间、开始/结束、总用时只算真正在跑的时间）、解说者、时间戳接口（只留接口）。"""
 
+import _winfix  # noqa: F401  Windows：测试结束时清理临时文件夹（见 _winfix.py）
 import datetime as dt
 import json
 import tempfile

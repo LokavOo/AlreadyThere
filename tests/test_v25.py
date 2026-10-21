@@ -1,6 +1,7 @@
 """2.5：超时拆分、流式状态、口径进提示词、硬伤/未验证分类、核对类型、作者验证未通过标记、候选值比对、
 代码哈希、输出语言、速度测试、报告修正。"""
 
+import _winfix  # noqa: F401  Windows：测试结束时清理临时文件夹（见 _winfix.py）
 import json
 import shutil
 import tempfile

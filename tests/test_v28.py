@@ -1,5 +1,6 @@
 """2.8：表单阶段改为开关、默认关（用户 2026-10-21 定）。关的时候直接用原题和口径做题、审题，第一轮就是基线。"""
 
+import _winfix  # noqa: F401  Windows：测试结束时清理临时文件夹（见 _winfix.py）
 import json
 import tempfile
 import unittest

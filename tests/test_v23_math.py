@@ -1,4 +1,5 @@
 """2.3：答案格式校验、数值验证、小数近似判错。"""
+import _winfix  # noqa: F401  Windows：测试结束时清理临时文件夹（见 _winfix.py）
 import unittest
 
 from alreadythere.fields import mathcheck as MC

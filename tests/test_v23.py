@@ -1,4 +1,5 @@
 """2.3：流式调用层测试（本机假 SSE 服务器，真实走 HTTP）。"""
+import _winfix  # noqa: F401  Windows：测试结束时清理临时文件夹（见 _winfix.py）
 import json, shutil, tempfile, threading, time, unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
