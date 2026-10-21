@@ -6,7 +6,7 @@
       "provider": "openai_compat",
       "base_url": "https://api.deepseek.com",
       "key_name": "DEEPSEEK_API_KEY",
-      "model": "deepseek-v4-pro",
+      "model": "deepseek-flash",
       "series": "DeepSeek",
       "context_window": 128000,
       "extra": {
@@ -59,6 +59,22 @@
       "memory": {
         "mode": "全局"
       }
+    },
+    "X1": {
+      "kind": "解说者",
+      "_说明": "解说者：用大白话向你讲解过程，它的话不进流程、不是验证。这份工作便宜的模型完全够用，不用开深度思考，不必用贵的模型。context_window 写这个模型的上下文大小（token），程序据此决定一次给它看多少记录。",
+      "provider": "openai_compat",
+      "base_url": "https://api.deepseek.com",
+      "key_name": "DEEPSEEK_API_KEY",
+      "model": "deepseek-flash",
+      "series": "DeepSeek",
+      "context_window": 128000,
+      "max_tokens": 4000,
+      "extra": {
+        "thinking": {
+          "type": "disabled"
+        }
+      }
     }
   },
   "search": {
@@ -68,8 +84,10 @@
   "params": {
     "max_rounds": 6,
     "items_per_call": 6,
-    "search_results_per_query": 3
+    "search_results_per_query": 3,
+    "max_concurrency": 3
   },
+  "_并发说明": "max_concurrency：同一个账户（接入方式+网址+密钥名 一样才算同一账户）最多允许几个角色同时在等模型回复，不同账户之间互不影响、不受这个数字限制。真正能不能提速，看的是你配了几个不同的真实账户，不是密钥数量——同一账户下多开几把密钥通常没用：各家接口的限额一般是按账户算的，跟用的是哪把密钥无关（比如 DeepSeek 官方文档写明：并发限制按账户计算，与使用哪个密钥无关）。具体每家的限额规则和这个数字该填多少，请自己去对应接口的官方文档确认，这里的 3 只是一个保守的起始值。",
   "_memory说明": {
     "全局": "能看到所有生产者之前的结果和意见原文",
     "固定": "只看 see 里列出的角色（self 表示自己），最近 rounds 轮",

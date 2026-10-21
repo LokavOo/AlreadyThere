@@ -6,12 +6,12 @@ for %%D in ("%USERPROFILE%\anaconda3" "%USERPROFILE%\Anaconda3" "%USERPROFILE%\m
 )
 if defined ANA (
   call "%ANA%\Scripts\activate.bat" "%ANA%" >nul 2>nul
-  start "" "%ANA%\pythonw.exe" -m guanzhe app
+  start "" "%ANA%\pythonw.exe" -m alreadythere app
   exit /b 0
 )
 where pythonw >nul 2>nul
 if not errorlevel 1 (
-  start "" pythonw -m guanzhe app
+  start "" pythonw -m alreadythere app
   exit /b 0
 )
 echo √ª’“µΩ Python£®Anaconda£©°£

@@ -1,0 +1,16 @@
+# 密钥与个人数据不上传
+密钥.env
+*.env
+!examples/*.模板
+数据/
+设置.json
+设置.json.bak
+!examples/设置.json
+# 运行产生的项目文件夹（含 project.db）与缓存
+*/project.db
+运行中.txt
+运行日志.txt
+__pycache__/
+build/
+dist/
+*.spec

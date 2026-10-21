@@ -1,0 +1,16 @@
+{
+  "project_id": "AIME2026_I_11to15",
+  "task": "final_answer",
+  "question": "AIME 2026 第一场第 11–15 题（试跑用，5 题）",
+  "scope": "只要最终答案：一个 0 到 999 之间的整数（AIME 的规则）；不要求证明。（本项目只做题库 5 题中勾选的 1 题）",
+  "source": "题目来源：MathArena/aime_2026（Hugging Face 数据集，许可 CC BY-NC-SA 4.0），即 2026 年美国数学邀请赛 AIME I（第 1–15 题）与 AIME II（第 16–30 题）；题目版权归美国数学协会（MAA）。题面原样照录，未作改动。",
+  "items": [
+    {
+      "id": "A11",
+      "name": "AIME 2026 I 第11题",
+      "problem": "The integers from $1$ to $64$ are placed in some order into an $8 \\times 8$ grid of cells with one number in each cell. Let $a_{i,j}$ be the number placed in the cell in row $i$ and column $j,$ and let $M$ be the sum of the absolute differences between adjacent cells. That is,\n\\[\nM = \\sum^8_{i=1} \\sum^7_{j=1} (|a_{i,j+1} - a_{i,j}| + |a_{j+1,i} - a_{j,i}|).\n\\]\nFind the remainder when the maximum possible value of $M$ is divided by $1000.$",
+      "gold": "896"
+    }
+  ],
+  "flow_version": "2.9"
+}

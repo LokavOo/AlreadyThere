@@ -1,4 +1,4 @@
-# 测试与发布（1.9）：每次推送在 Windows、Linux、Mac 上跑全部测试；
+# 测试与发布（1.9 起；2.11 改包名 alreadythere、加程序图标）：每次推送在 Windows、Linux、Mac 上跑全部测试；
 # 发布（Release）时再在 Windows 上生成 exe，实际跑一遍演示项目，通过后才把下载包附到发布页。
 name: 测试与发布
 
@@ -39,7 +39,7 @@ jobs:
       - name: 打包（文件夹形式）
         run: |
           pip install pyinstaller
-          pyinstaller --onedir --name AlreadyThere --add-data "guanzhe/data;guanzhe/data" --add-data "guanzhe/app_page.html;guanzhe" entry.py
+          pyinstaller --onedir --name AlreadyThere --icon alreadythere/assets/icon.ico --add-data "alreadythere/data;alreadythere/data" --add-data "alreadythere/assets;alreadythere/assets" --add-data "alreadythere/app_page.html;alreadythere" entry.py
       - name: 用 exe 跑一遍演示项目（不联网、不花钱）
         shell: pwsh
         env:
@@ -53,10 +53,18 @@ jobs:
           $p = Start-Process -FilePath ".\dist\AlreadyThere\AlreadyThere.exe" -ArgumentList "app","--no-window","--port","8765" -PassThru
           Start-Sleep -Seconds 8
           $body = '{"name":"smoke2","question":"__demo__"}'
-          $r = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8765/api/new" -Headers @{"X-Guanzhe"="1"} -ContentType "application/json" -Body $body
+          $r = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8765/api/new" -Headers @{"X-AlreadyThere"="1"} -ContentType "application/json" -Body $body
           Stop-Process -Id $p.Id -Force
           if (-not $r.ok) { throw "窗口版新建项目失败：$($r.msg)" }
           if (-not (Test-Path "dist\数据\smoke2\outputs\结论.md")) { throw "窗口版新建的演示项目没有生成结论" }
+      - name: 检查窗口能取到程序图标
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath ".\dist\AlreadyThere\AlreadyThere.exe" -ArgumentList "app","--no-window","--port","8766" -PassThru
+          Start-Sleep -Seconds 8
+          $r = Invoke-WebRequest -Uri "http://127.0.0.1:8766/favicon.ico" -UseBasicParsing
+          Stop-Process -Id $p.Id -Force
+          if ($r.StatusCode -ne 200 -or $r.RawContentLength -lt 1000) { throw "exe 里取不到程序图标" }
       - name: 做下载包并附到发布页
         shell: pwsh
         env:
@@ -65,7 +73,7 @@ jobs:
           $name = "AlreadyThere-${{ github.event.release.tag_name }}-windows"
           New-Item -ItemType Directory $name | Out-Null
           Copy-Item dist\AlreadyThere\* $name -Recurse
-          Copy-Item 使用说明.md, 迭代记录.md, README.md $name
+          Copy-Item 使用说明.md, 迭代记录.md, 待实现.md, README.md $name
           if (Test-Path LICENSE) { Copy-Item LICENSE $name }
           Copy-Item examples $name -Recurse
           Compress-Archive -Path $name -DestinationPath "$name.zip"

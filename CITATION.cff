@@ -1,10 +1,10 @@
 cff-version: 1.2.0
 message: "如引用本软件，请使用以下信息 / If you use this software, please cite it as below."
-title: "观者自在 (AlreadyThere): multi-model cross-verification program, prototype phase 1"
+title: "观者自在 (AlreadyThere): a multi-model cross-verification program"
 authors:
   - alias: "LokavOo-"
-version: "1.9"
-date-released: "2026-09-26"
+version: "2.11"
+date-released: "2026-10-21"
 license: Apache-2.0
 references:
   - type: generic

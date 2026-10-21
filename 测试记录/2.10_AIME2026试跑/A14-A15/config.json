@@ -1,0 +1,22 @@
+{
+  "project_id": "AIME2026_I_11to15",
+  "task": "final_answer",
+  "question": "AIME 2026 第一场第 11–15 题（试跑用，5 题）",
+  "scope": "只要最终答案：一个 0 到 999 之间的整数（AIME 的规则）；不要求证明。（本项目只做题库 5 题中勾选的 2 题）",
+  "source": "题目来源：MathArena/aime_2026（Hugging Face 数据集，许可 CC BY-NC-SA 4.0），即 2026 年美国数学邀请赛 AIME I（第 1–15 题）与 AIME II（第 16–30 题）；题目版权归美国数学协会（MAA）。题面原样照录，未作改动。",
+  "items": [
+    {
+      "id": "A14",
+      "name": "AIME 2026 I 第14题",
+      "problem": "In an equiangular pentagon, the sum of the squares of the side lengths equals $308,$ and the sum of the squares of the diagonal lengths equals $800.$ The square of the perimeter of the pentagon can be expressed as $m \\sqrt n,$ where $m$ and $n$ are positive integers and $n$ is not divisible by the square of any prime. Find $m + n.$",
+      "gold": "681"
+    },
+    {
+      "id": "A15",
+      "name": "AIME 2026 I 第15题",
+      "problem": "Let $a, b,$ and $n$ be positive integers with both $a$ and $b$ greater than or equal to $2$ and less than or equal to $2n$. Define an $a \\times b$ cell loop in a $2n \\times 2n$ grid of cells to be the $2a + 2b - 4$ cells that surround an $(a - 2) \\times (b - 2)$ (possibly empty) rectangle of cells in the grid. For example, the following diagram shows a way to partition a $6 \\times 6$ grid of cells into $4$ cell loops.\n\n| P   P P   P | Y   Y |\n| P | R R | P | Y | Y |\n| P | R R | P | Y | Y |\n| P   P P   P | Y | Y |\n| G   G G   G | Y | Y |\n| G   G G   G | Y   Y |\n\nFind the number of ways to partition a $10 \\times 10$ grid of cells into $5$ cell loops so that every cell of the grid belongs to exactly one cell loop.",
+      "gold": "83"
+    }
+  ],
+  "flow_version": "2.9"
+}

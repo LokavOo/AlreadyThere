@@ -1,10 +1,10 @@
-"""打包成 exe 时的入口（1.9）。双击 exe（不带参数）= 打开窗口版；带参数时与 python -m guanzhe 相同。"""
+"""打包成 exe 时的入口（1.9）。双击 exe（不带参数）= 打开窗口版；带参数时与 python -m alreadythere 相同。"""
 
 import os
 import subprocess
 import sys
 
-from guanzhe.__main__ import main
+from alreadythere.__main__ import main
 
 if __name__ == "__main__":
     for _s in (sys.stdout, sys.stderr):  # 控制台不是 UTF-8 时，打印中文也不出错

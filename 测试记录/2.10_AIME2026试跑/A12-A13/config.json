@@ -1,0 +1,22 @@
+{
+  "project_id": "AIME2026_I_11to15",
+  "task": "final_answer",
+  "question": "AIME 2026 第一场第 11–15 题（试跑用，5 题）",
+  "scope": "只要最终答案：一个 0 到 999 之间的整数（AIME 的规则）；不要求证明。（本项目只做题库 5 题中勾选的 2 题）",
+  "source": "题目来源：MathArena/aime_2026（Hugging Face 数据集，许可 CC BY-NC-SA 4.0），即 2026 年美国数学邀请赛 AIME I（第 1–15 题）与 AIME II（第 16–30 题）；题目版权归美国数学协会（MAA）。题面原样照录，未作改动。",
+  "items": [
+    {
+      "id": "A12",
+      "name": "AIME 2026 I 第12题",
+      "problem": "Triangle $\\triangle ABC$ lies in plane $\\mathcal P$ with $AB = 6, AC = 4,$ and $\\angle BAC = 90^\\circ.$ Let $D$ be the reflection across $\\overline{BC}$ of the centroid of $\\triangle ABC. {}$ Four spheres, all on the same side of $\\mathcal P,$ have radii $1, 2, 3,$ and $r$ and are tangent to $\\mathcal P$ at points $A, B, C,$ and $D,$ respectively. The four spheres are also each tangent to a second plane $\\mathcal T$ and are all on the same side of $\\mathcal T.$ The value of $r$ can be written as $\\tfrac mn,$ where $m$ and $n$ are relatively prime positive integers. Find $m+n.$",
+      "gold": "161"
+    },
+    {
+      "id": "A13",
+      "name": "AIME 2026 I 第13题",
+      "problem": "For each positive integer $r$ less than $502,$ define\n\\[\nS_r=\\sum_{m\\ge 0}\\dbinom{10000}{502m+r},\n\\]\nwhere $\\binom{10000}{n}$ is defined to be $0$ when $n>10000.$ That is, $S_r$ is the sum of all binomial coefficients of the form $\\binom{10000}{k}$ for which $0\\le k\\le 10000$ and $k-r$ is a multiple of $502.$ Find the number of integers in the list $S_0,S_1,\\dots,S_{501}$ that are multiples of the prime number $503.$",
+      "gold": "39"
+    }
+  ],
+  "flow_version": "2.9"
+}

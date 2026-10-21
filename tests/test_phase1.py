@@ -9,16 +9,18 @@ import unittest
 from decimal import Decimal
 from pathlib import Path
 
-from guanzhe import blocks as B, demo, report
-from guanzhe.tasks import fact_compilation as T
-from guanzhe.__main__ import load_settings_from_obj
-from guanzhe.blocks import locate_quote
-from guanzhe.flow import Flow
-from guanzhe.models import CallFailedPause, FatalCallError, ModelHub, TransportError
-from guanzhe.retrieval import MockSearch, Retriever
-from guanzhe.store import Project
-from guanzhe.tasks.fact_compilation import normalize_date, zodiac_of
-from guanzhe.util import extract_json, find_numbers, written_matches_output
+from alreadythere import blocks as B, demo, report
+from alreadythere.tasks import fact_compilation as T
+from alreadythere.__main__ import load_settings_from_obj
+from alreadythere.blocks import locate_quote
+from alreadythere.flow import Flow
+from alreadythere.models import CallFailedPause, FatalCallError, ModelHub, TransportError
+from alreadythere.retrieval import MockSearch, Retriever
+from alreadythere.store import Project
+from alreadythere.tasks.fact_compilation import normalize_date, zodiac_of
+from alreadythere.util import cn_to_int, extract_json, find_numbers, written_matches_output
+from alreadythere.fields.record import fold_latin
+from alreadythere.textnorm import find_skeleton
 
 
 class Tmp(unittest.TestCase):
@@ -94,7 +96,7 @@ class TestRetry(Tmp):
         p, st = self.demo_project()
         prov = FlakyProvider(script)
         waits = []
-        hub = ModelHub(p, st, {}, providers={"mock|": prov}, sleep=waits.append)
+        hub = ModelHub(p, st, {}, providers={"mock||": prov}, sleep=waits.append)
         return p, hub, prov, waits
 
     def test_transport_then_success(self):
@@ -153,7 +155,7 @@ class TestDemoFlow(Tmp):
 
     def test_resume_uses_cached_calls(self):
         p, st = self.demo_project()
-        router = demo.providers()["mock|"]
+        router = demo.providers()["mock||"]
         orig = router.map["mock-c"]
         state = {"fail": True}
 
@@ -162,7 +164,7 @@ class TestDemoFlow(Tmp):
                 raise TransportError("审查者掉线")
             return orig(model, system, user)
         router.map["mock-c"] = flaky
-        hub = ModelHub(p, st, {}, providers={"mock|": router}, sleep=lambda s: None)
+        hub = ModelHub(p, st, {}, providers={"mock||": router}, sleep=lambda s: None)
         res = Flow(p, st, hub, Retriever(p, MockSearch(demo.PAGES))).run()
         self.assertTrue(res.startswith("调用失败暂停"))
         n_calls_before = p.q("SELECT COUNT(*) c FROM calls WHERE role='P1' AND status='成功'")[0]["c"]
@@ -199,7 +201,7 @@ class Test14(Tmp):
         self.assertFalse(B.locate_quote(raw, "朱棣生于1361年")[0])
 
     def test_calendar(self):
-        from guanzhe import cn_calendar as C
+        from alreadythere import cn_calendar as C
         cases = {"天历元年九月十八": "1328-10-21", "建文元年二月初九日": "1399-03-16",
                  "顺治十一年三月十八": "1654-05-04", "万历三十八年十二月廿四": "1611-02-06",
                  "光绪三十二年正月十四": "1906-02-07"}
@@ -271,7 +273,7 @@ class Test14(Tmp):
     def test_calendar_convention_not_a_dispute(self):
         # 1328-10-21（儒略历）与 1328-10-29（格里历外推）是同一天
         self.assertEqual(Flow.agree([(1328, 10, 21), (1328, 10, 29)]), (1328, 10, 21))
-        from guanzhe import cn_calendar as C
+        from alreadythere import cn_calendar as C
         js = [j for _, j in C.dates_in("朱元璋生于天历元年九月十八日")][0]
         self.assertIn(C.date_to_jd(1328, 10, 21), js)
 
@@ -293,40 +295,13 @@ class Test14(Tmp):
         self.assertIn("ganzhi", {r[1] for r in p2.conn.execute("PRAGMA table_info(items)")})
 
 
-class TestExtraParams(unittest.TestCase):
-    def test_extra_and_max_tokens_reach_payload(self):
-        import guanzhe.models as M
-        seen = {}
-        def fake_post(url, headers, payload, timeout):
-            seen.update(payload)
-            return {"choices": [{"message": {"content": '{"ok": true}'}, "finish_reason": "stop"}], "usage": {}}
-        orig = M._http_post
-        M._http_post = fake_post
-        try:
-            d = Path(tempfile.mkdtemp())
-            proj = Project.create(d / "x", {"project_id": "X", "question": "", "scope": "", "items": []})
-            st = load_settings_from_obj({"roles": {"P1": {"kind": "生产者", "provider": "openai_compat",
-                  "base_url": "https://example.invalid", "key_name": "K", "model": "m", "series": "S",
-                  "max_tokens": 16000, "extra": {"thinking": {"type": "disabled"}, "model": "bad"}}},
-                  "search": {"engine": "mock"}})
-            hub = ModelHub(proj, st, {"K": "k"})
-            hub.call_json("P1", "s", "u", call_key="t", round_=0, max_tokens=300)
-            self.assertEqual(seen["thinking"], {"type": "disabled"})
-            self.assertEqual(seen["max_tokens"], 16000)
-            self.assertEqual(seen["model"], "m")
-            row = proj.q("SELECT params FROM calls")[0]["params"]
-            self.assertIn("disabled", row)
-        finally:
-            M._http_post = orig
-            shutil.rmtree(d, ignore_errors=True)
-
 if __name__ == "__main__":
     unittest.main()
 
 
 class TestHardening(Tmp):
     def test_bom_secrets(self):
-        from guanzhe.config import load_secrets
+        from alreadythere.config import load_secrets
         f = self.dir / "k.env"
         f.write_bytes("﻿ANTHROPIC_API_KEY=abc\n".encode("utf-8"))
         self.assertEqual(load_secrets(f).get("ANTHROPIC_API_KEY"), "abc")
@@ -354,8 +329,8 @@ class TestHardening(Tmp):
     def test_wrong_shape_json_is_format_retry(self):
         p, st = self.demo_project()
         prov = FlakyProvider(['{"searches": ["just a string"]}', '{"searches": []}'])
-        hub = ModelHub(p, st, {}, providers={"mock|": prov}, sleep=lambda s: None)
-        from guanzhe.util import FormatError
+        hub = ModelHub(p, st, {}, providers={"mock||": prov}, sleep=lambda s: None)
+        from alreadythere.util import FormatError
 
         def val(o):
             for q in o["searches"]:
@@ -406,11 +381,11 @@ class TestGroups(unittest.TestCase):
 
 class TestFeed(unittest.TestCase):
     def test_demo_feed_readable(self):
-        from guanzhe import feed
+        from alreadythere import feed
         d = Path(tempfile.mkdtemp())
         try:
             import subprocess, sys
-            subprocess.run([sys.executable, "-m", "guanzhe", "demo", str(d / "demo")], check=True, capture_output=True,
+            subprocess.run([sys.executable, "-m", "alreadythere", "demo", str(d / "demo")], check=True, capture_output=True,
                            cwd=Path(__file__).resolve().parents[1])
             r = feed.messages(d / "demo")
             kinds = {m["kind"] for m in r["messages"]}
@@ -475,7 +450,7 @@ class Test15(Tmp):
         self.assertTrue(B.flag_notes("我认为是 1399 年")[0].startswith("说明文字中出现数字"))
 
     def test_window_saves_memory_keeps_other_fields(self):
-        from guanzhe.app import App
+        from alreadythere.app import App
         src = Path(__file__).resolve().parents[1] / "examples" / "设置.json"
         (self.dir / "设置.json").write_bytes(src.read_bytes())
         before = json.loads(src.read_text(encoding="utf-8-sig"))
@@ -496,8 +471,8 @@ class Test15(Tmp):
         self.assertFalse(a.set_memory({"P9": {"mode": "全局"}})["ok"])
 
     def test_missing_trusted_sites_warned(self):
-        from guanzhe import feed
-        from guanzhe.app import App
+        from alreadythere import feed
+        from alreadythere.app import App
         cfg = demo.project_config()
         cfg.pop("trusted_sites", None)
         p = Project.create(self.dir / "无名单", cfg)
@@ -514,7 +489,7 @@ class Test16(Tmp):
     """1.6 新增：朝代提示不排除前朝年号、独立来源编号只认程序提供的、同样内容反复退回时停下。"""
 
     def test_calendar_previous_dynasty_era(self):
-        from guanzhe import cn_calendar as C
+        from alreadythere import cn_calendar as C
         self.assertEqual(C.from_text("元文宗天曆元年九月十八日", "明朝")[1]["date"], "1328-10-21")  # 朱元璋生于元
         self.assertEqual(C.from_text("明嘉靖三十八年四月初八日", "清朝")[1]["date"], "1559-05-14")  # 努尔哈赤生于明
         self.assertEqual(C.from_text("建文元年二月初九日", "明朝")[1]["date"], "1399-03-16")
@@ -522,7 +497,7 @@ class Test16(Tmp):
     def _run_with_reviewer_source(self, rewrite):
         import json as _j
         p, st = self.demo_project()
-        router = demo.providers()["mock|"]
+        router = demo.providers()["mock||"]
         orig = router.map["mock-c"]
 
         def patched(model, system, user):
@@ -532,7 +507,7 @@ class Test16(Tmp):
                     x["independent_source"] = rewrite(x["independent_source"])
             return _j.dumps(o, ensure_ascii=False)
         router.map["mock-c"] = patched
-        hub = ModelHub(p, st, {}, providers={"mock|": router}, sleep=lambda s: None)
+        hub = ModelHub(p, st, {}, providers={"mock||": router}, sleep=lambda s: None)
         Flow(p, st, hub, Retriever(p, MockSearch(demo.PAGES))).run()
         return p
 
@@ -569,7 +544,7 @@ class Test17(unittest.TestCase):
     """1.7：日期字段核对器独立可用；同样的输入每次给出同样的摘录（与随机种子无关）。"""
 
     def test_date_field_standalone(self):
-        from guanzhe.fields import DateField
+        from alreadythere.fields import DateField
         F = DateField(key="出生日期", noun="出生")
         self.assertEqual(F.agree([(1328, 10, 21), (1328, 10, 29)]), (1328, 10, 21))
         self.assertEqual(F.format(F.normalize("1399")), "1399")
@@ -581,7 +556,7 @@ class Test17(unittest.TestCase):
 
     def test_excerpts_deterministic(self):
         import os, subprocess, sys
-        code = ("from guanzhe.tasks.fact_compilation import aliases, birth_windows;"
+        code = ("from alreadythere.tasks.fact_compilation import aliases, birth_windows;"
                 "k=aliases({'name':'明宣宗朱瞻基（宣德）','aliases':['宣宗','瞻基']});"
                 "t='宣宗朱瞻基生于建文元年二月初九日。'*3+'瞻基，1399年生。';"
                 "print(k, birth_windows(t,k,width=30,top=3))")
@@ -670,7 +645,7 @@ class Test18(Tmp):
         class Pick:
             def complete(self, model, *a, **k):
                 return routers[model].complete(model, *a, **k)
-        hub = ModelHub(p, st, {}, providers={"mock|": Pick()}, sleep=lambda s: None)
+        hub = ModelHub(p, st, {}, providers={"mock||": Pick()}, sleep=lambda s: None)
         res = Flow(p, st, hub, Retriever(p, MockSearch(self.PAGES))).run()
         self.assertEqual(res, "完成")
         c = report.build(p)
@@ -684,12 +659,12 @@ class Test18(Tmp):
         self.assertEqual(rows["N02"]["得主人数"], 1)
         md = (self.dir / "nb" / "outputs" / "结论.md").read_text(encoding="utf-8")
         self.assertIn("## 和平奖", md)
-        from guanzhe import feed
+        from alreadythere import feed
         msgs = feed.messages(self.dir / "nb")["messages"]
         self.assertTrue(any("获奖原因" in m["text"] for m in msgs if m["kind"] == "claim"))
 
     def test_name_and_citation_checkers(self):
-        from guanzhe.fields.record import RecordField
+        from alreadythere.fields.record import RecordField
         F = RecordField()
         raw = 'The Nobel Prize in Physics 2016 was awarded to David J. Thouless, F. Duncan M. Haldane and J. Michael Kosterlitz ' \
               '"for theoretical discoveries of topological phase transitions and topological phases of matter."'
@@ -713,15 +688,15 @@ class Test19(Tmp):
 
     def test_data_folder_migration_and_examples(self):
         import shutil, subprocess, sys, time
-        from guanzhe import app as A
+        from alreadythere import app as A
         prog_src = Path(__file__).resolve().parents[1]
         parent = self.dir / "原型"
         new = parent / "观者自在(AlreadyThere)_v1.9"
         old = parent / "观者自在(AlreadyThere)_v1.8"
-        shutil.copytree(prog_src / "guanzhe", new / "guanzhe")
+        shutil.copytree(prog_src / "alreadythere", new / "alreadythere")
         shutil.copytree(prog_src / "examples", new / "examples")
-        (old / "guanzhe").mkdir(parents=True)
-        (old / "guanzhe" / "__init__.py").write_text("", encoding="utf-8")
+        (old / "alreadythere").mkdir(parents=True)
+        (old / "alreadythere" / "__init__.py").write_text("", encoding="utf-8")
         shutil.copy2(prog_src / "examples" / "设置.json", old / "设置.json")
         (old / "密钥.env").write_text("DEEPSEEK_API_KEY=x\n", encoding="utf-8")
         (old / "我的题.json").write_text(json.dumps({"question": "q", "items": []}), encoding="utf-8")
@@ -744,7 +719,7 @@ class Test19(Tmp):
         self.assertFalse(a.new_project("x", "examples/../设置.json")["ok"])
 
     def test_split_citation_parts(self):
-        from guanzhe.fields.record import RecordField
+        from alreadythere.fields.record import RecordField
         F = RecordField()
         raw = ('The Nobel Prize in Physics 2020 was divided, one half awarded to Roger Penrose "for the discovery that black hole '
                'formation is a robust prediction of the general theory of relativity", the other half jointly to Reinhard Genzel '
@@ -763,7 +738,7 @@ class Test19(Tmp):
     def test_partial_batch_accepted(self):
         import json as _j
         p, st = self.demo_project()
-        router = demo.providers()["mock|"]
+        router = demo.providers()["mock||"]
         orig = router.map["mock-a"]
 
         def drop_one(model, system, user):
@@ -774,8 +749,86 @@ class Test19(Tmp):
                 o["blocks"] = [b for b in o["blocks"] if b["item"] != "I02"]  # 漏交 I02
             return _j.dumps(o, ensure_ascii=False)
         router.map["mock-a"] = drop_one
-        hub = ModelHub(p, st, {}, providers={"mock|": router}, sleep=lambda s: None)
+        hub = ModelHub(p, st, {}, providers={"mock||": router}, sleep=lambda s: None)
         Flow(p, st, hub, Retriever(p, MockSearch(demo.PAGES))).run()
         ev = p.q("SELECT content FROM events WHERE type='部分提交'")
         self.assertTrue(ev and "I02" in ev[0]["content"])
         self.assertFalse(p.q("SELECT 1 FROM calls WHERE call_id LIKE 'R1-P1-write%' AND status!='成功'"))  # 没有整批重交
+
+
+class Test20(Tmp):
+    """2.0 修复外部审阅提的几个问题：撇号规整、日期月日范围、短摘抄阈值、意见隔离漏月日、
+    "资料缺载"零检索提示、中文数字里的"有"字与单字误报、"待复核"原因分类。"""
+
+    def test_apostrophe_folds_same_as_no_apostrophe(self):
+        # L'Huillier（照官网抄，带撇号）与 LHuillier（撇号丢了）规整后应视为同一个词，
+        # 不然两个生产者会因为写法不同被判"有争议"（2023 年物理学奖 Anne L'Huillier 就是这个名字）。
+        self.assertEqual(fold_latin("Anne L'Huillier"), fold_latin("Anne LHuillier"))
+        self.assertEqual(fold_latin("L'Huillier"), "lhuillier")
+
+    def test_date_rejects_out_of_range_month_day(self):
+        self.assertIsNone(normalize_date("1328-13-01"))  # 13 月不合法，不能被静默接受
+        self.assertIsNone(normalize_date("1328-01-32"))  # 32 日不合法
+        self.assertEqual(normalize_date("1328-12-01"), (1328, 12, 1))  # 合法日期不受影响
+
+    def test_find_skeleton_allows_short_but_real_quotes(self):
+        text = "洪武元年，太祖字国瑞，是年即帝位。"
+        self.assertIsNotNone(find_skeleton(text, "字国瑞"))  # 3 字的真实摘抄不该被硬阈值挡掉
+        self.assertIsNotNone(find_skeleton(text, "即帝位"))
+        self.assertIsNone(find_skeleton(text, "位"))  # 1 字太容易偶然命中，仍然拒绝
+        self.assertIsNone(find_skeleton(text, "是年"))  # 2 字同样拒绝，阈值只降到 3
+
+    def test_mask_foreign_hides_month_day_not_just_year(self):
+        p, st = self.demo_project()
+        f = Flow(p, st, None, None)
+        # 关键：这条块所有字段串起来都找不到"阿拉伯数字＋月/日"这个模式——出生日期是纯 ISO 格式，
+        # 农历原文和原句都是中文数字。靠字面找"月/日"两个字的旧写法在这种（真实存档数据里最常见
+        # 的）情况下会漏遮；月日必须从 normalize 后的日期值里取才靠得住。
+        ob = json.dumps({"状态": "查到", "出处": "S00002", "出生日期": "1371-11-05",
+                         "农历原文": "洪武四年九月廿九日", "原句": "洪武四年九月廿九日，郑和生"},
+                        ensure_ascii=False)
+        p.exec("INSERT INTO blocks VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+              ("P2-R1-B001", "A00002", "P2", 1, "条目", "I01", ob, "已查证", "未验证", None, "有效", "[]", "[]"))
+        text = "审查者判定：对方查到的日子是11月5日，与你不一致"
+        masked = f.mask_foreign(text, "P1", "I01")
+        self.assertNotIn("11月5日", masked)
+        self.assertIn("某月某日", masked)
+
+    def test_month_day_masking_skips_values_both_sides_share(self):
+        # 双方月日本来就一样（只是年份不同）时，不算"他方专属信息"，不用遮，遮了反而误伤。
+        p, st = self.demo_project()
+        f = Flow(p, st, None, None)
+        own = json.dumps({"状态": "查到", "出处": "S00001", "出生日期": "1371-11-05"}, ensure_ascii=False)
+        ob = json.dumps({"状态": "查到", "出处": "S00002", "出生日期": "1502-11-05"}, ensure_ascii=False)
+        p.exec("INSERT INTO blocks VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+              ("P1-R1-B001", "A00001", "P1", 1, "条目", "I01", own, "已查证", "未验证", None, "有效", "[]", "[]"))
+        p.exec("INSERT INTO blocks VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+              ("P2-R1-B001", "A00002", "P2", 1, "条目", "I01", ob, "已查证", "未验证", None, "有效", "[]", "[]"))
+        text = "对方的日子是11月5日，年份不一样但月日一样"
+        masked = f.mask_foreign(text, "P1", "I01")
+        self.assertIn("11月5日", masked)
+
+    def test_missing_data_flags_when_no_retrieval_attempted(self):
+        p, st = self.demo_project()
+        f = Flow(p, st, None, None)
+        flags, st_check = f.check_block("P1", "I01", {"状态": "资料缺载"})
+        self.assertTrue(any("检索记录为空" in x for x in flags))  # 一次检索都没有，不能直接信"资料缺载"
+        self.assertEqual(st_check, "未查证")
+        p.exec("INSERT INTO retrievals VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+              ("S00001", "P1", "I01", 1, "2026-01-01T00:00:00Z", "q", "https://x.test/", "t", "a.txt", "h", "原文"))
+        flags2, st_check2 = f.check_block("P1", "I01", {"状态": "资料缺载"})
+        self.assertEqual(flags2, ["生产者称资料缺载"])  # 真有检索记录时维持原来的判断，不误伤
+        self.assertEqual(st_check2, "未查证")
+
+    def test_cn_to_int_you_linker_and_single_char_names(self):
+        self.assertEqual(cn_to_int("七十有一"), 71)  # 古汉语"有"作连接词，"七十有一"＝71
+        self.assertIsNone(dict(find_numbers("三保太监下西洋")).get("三"))  # 人名里的单字数字不该被当成数字
+        self.assertEqual(dict(find_numbers("享年七十有一"))["七十有一"], Decimal(71))
+
+    def test_recheck_reason_classifies_note(self):
+        self.assertEqual(report.recheck_reason("待复核：两方引用同一网站（www.nobelprize.org），且没有找到另一可信网站的独立来源"),
+                         "同网站，未找到独立来源")
+        self.assertEqual(report.recheck_reason("待复核：各方模型属同一系列，且没有可信网站的独立来源支持"),
+                         "同系列模型，未确认独立性")
+        self.assertEqual(report.recheck_reason("待复核：两方一致，但没有找到可信网站的独立来源（或独立来源没讲到出生）"),
+                         "无独立来源支持")

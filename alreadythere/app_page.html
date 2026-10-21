@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>观者自在</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="/icon.png">
+<style>
+:root{--bg:#f4f3ef;--side:#ebe9e3;--card:#ffffff;--ink:#23231f;--mute:#85847c;--line:#dcdad2;--acc:#3f6f9f;
+--ok:#2f8a57;--warn:#b7791f;--bad:#c2463d;--c0:#3f6f9f;--c1:#8a5a9e;--c2:#2f8a78;--c3:#b0643a;--c4:#5a6f2f}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1b19;--side:#232320;--card:#2b2b28;--ink:#ecebe6;--mute:#9d9c95;--line:#3a3935;
+--acc:#7fb0e0;--ok:#6cc08b;--warn:#e0a44a;--bad:#ef7b72;--c0:#7fb0e0;--c1:#c39ad6;--c2:#6cc8b4;--c3:#e39a6e;--c4:#a8c07a}}
+/* 2.6 宽度分档：按窗口宽度落档，气泡和思考框的最大宽度取该档的固定值（窗口可随意拖动，宽度只按档位跳） */
+:root{--bubw:560px}
+@media (min-width:1280px){:root{--bubw:720px}}
+@media (min-width:1600px){:root{--bubw:880px}}
+@media (min-width:1920px){:root{--bubw:1040px}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.6 "Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;display:flex}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 12px}
+button.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+button:disabled{opacity:.45;cursor:default}
+aside{width:270px;flex:none;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:auto}
+.brand{padding:18px 18px 10px;display:flex;align-items:center;gap:10px}.brand .logo{width:40px;height:40px;flex:none}.brand b{font-size:18px}.brand small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
+.sec{padding:8px 12px 12px}.sec h3{font-size:12px;color:var(--mute);font-weight:600;margin:6px 6px 8px;letter-spacing:.05em}
+.proj{padding:8px 10px;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.proj:hover{background:var(--line)}.proj.sel{background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.pill{font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid var(--line);color:var(--mute);white-space:nowrap}
+.pill.run{color:var(--acc);border-color:var(--acc)}.pill.done{color:var(--ok);border-color:var(--ok)}
+.role{display:flex;align-items:center;gap:8px;padding:4px 6px;font-size:13px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--bad);flex:none}.dot.on{background:var(--ok)}
+.role span.m{color:var(--mute);font-size:12px;margin-left:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px}
+/* 2.0 界面待办：角色状态网格卡（头像先用色块+编号占位，真素材以后再换） */
+.rolegrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 2px 10px}
+.rcard{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 6px 8px;
+       display:flex;flex-direction:column;align-items:center;text-align:center}
+.rav{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+     color:#fff;font-weight:700;font-size:15px;position:relative}
+/* 状态圆环：::before 是常驻的实心圈（在线/离线用这个，静止）；::after 是涟漪（工作中/响应中叠加在上面，会扩散淡出） */
+.rav::before{content:"";position:absolute;inset:-4px;border-radius:50%;border:2.5px solid transparent;pointer-events:none;z-index:0}
+.rav::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2.5px solid transparent;pointer-events:none;z-index:0}
+.rav.st-在线::before{border-color:var(--ok)}
+.rav.st-工作中::before{border-color:var(--ok)}
+.rav.st-工作中::after{border-color:var(--ok);animation:ripple 1.7s ease-out infinite}
+.rav.st-响应中::before{border-color:var(--warn)}
+.rav.st-响应中::after{border-color:var(--warn);animation:ripple 1s ease-out infinite}
+.rav.st-离线::before{border-color:var(--bad)}
+@keyframes ripple{0%{transform:scale(1);opacity:.85}100%{transform:scale(1.38);opacity:0}}
+/* 右下角状态点：三种颜色（绿/黄/红），动态状态带呼吸 */
+.rav .sdot{position:absolute;right:-4px;bottom:-4px;width:19px;height:19px;border-radius:50%;
+           background:var(--card);z-index:1}
+.rav .sdot::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--ok)}
+.rav .sdot.c-y::after{background:var(--warn)}.rav .sdot.c-r::after{background:var(--bad)}
+/* 2.4：呼吸只作用在中间的彩色圆点上，垫在下面的底圈始终不透明 */
+.rav .sdot.breathe::after{animation:breathe 1.4s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:.5}}
+.rname{font-size:11.5px;font-weight:600;margin-top:6px;line-height:1.25}
+.rmodel{font-size:9.5px;color:var(--mute);line-height:1.25}
+.rstate{margin-top:3px;font-size:10.5px;font-weight:600;line-height:1.25}
+.rstate.st-在线{color:var(--ok)}.rstate.st-工作中{color:var(--ok)}
+.rstate.st-响应中{color:var(--warn)}.rstate.st-离线{color:var(--bad)}
+.rstate .dots::after{content:".";animation:dotcyc 1.2s steps(3,jump-none) infinite}
+@keyframes dotcyc{0%{content:".";}33%{content:"..";}66%{content:"...";}100%{content:".";}}
+.rretry{display:block;font-size:9px;color:var(--mute)}
+.rusage{margin-top:4px;font-size:9px;color:var(--mute);line-height:1.4;border-top:1px dashed var(--line);
+        padding-top:4px;width:100%}
+#pingout{font-size:12px;color:var(--mute);white-space:pre-wrap;margin:8px 6px 0;max-height:160px;overflow:auto}
+main{flex:1;display:flex;flex-direction:column;min-width:0}
+header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+header h2{margin:0;font-size:16px}header .q{color:var(--mute);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#chat{flex:1;overflow:auto;padding:16px 20px 24px}
+.msg{display:flex;gap:10px;margin:10px 0;max-width:calc(var(--bubw) + 44px)}
+.msg>div:last-child{flex:1}
+.who{display:flex;align-items:center;gap:2px}.who .bcopy{margin-left:auto;width:24px;height:22px;opacity:.55}.msg:hover .bcopy{opacity:1}
+.av{width:34px;height:34px;border-radius:50%;flex:none;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px}
+.who{font-size:12px;color:var(--mute);margin-bottom:3px}.who b{color:var(--ink);font-weight:600;margin-right:6px}
+.who .ts{margin-left:8px;font-size:11px;color:var(--mute);font-variant-numeric:tabular-nums}
+.ntime{display:block;text-align:right;font-size:11px;color:var(--mute);font-weight:400;margin-top:2px}
+#timing{white-space:normal;overflow:visible}
+.bub{background:var(--card);border:1px solid var(--line);border-radius:4px 12px 12px 12px;padding:8px 12px;white-space:pre-wrap;word-break:break-word}
+.bub.ok{border-left:3px solid var(--ok)}.bub.bad{border-left:3px solid var(--bad)}.bub.op{border-left:3px solid var(--warn)}
+.chk{font-size:12px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
+.chk.y{color:var(--ok)}.chk.n{color:var(--bad);font-weight:600}.chk.u{color:var(--mute)}
+.note{text-align:center;color:var(--mute);font-size:12px;margin:6px 0}
+.note.warn{color:var(--warn)}
+.quiet{color:var(--mute);font-size:12px;margin:2px 0 2px 44px}
+.divider{display:flex;align-items:center;gap:12px;color:var(--mute);font-size:12px;margin:18px 0 10px}
+.divider:before,.divider:after{content:"";flex:1;border-top:1px solid var(--line)}
+.banner{text-align:center;margin:14px 0}.banner span{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 14px;font-size:13px}
+.empty{color:var(--mute);text-align:center;margin-top:18vh;line-height:2}
+footer{border-top:1px solid var(--line);padding:10px 20px;display:flex;gap:8px;align-items:center;background:var(--bg)}
+footer .hint{color:var(--mute);font-size:12px;margin-left:auto}
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:9}
+.mask.show{display:flex}
+.dlg{background:var(--card);border-radius:12px;padding:20px;width:min(560px,92vw);max-height:86vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.dlg.wide{width:min(980px,94vw)}
+.dlg h3{margin:0 0 12px}.dlg label{display:block;margin:10px 0 4px;color:var(--mute);font-size:12px}
+.dlg select,.dlg input{width:100%;font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.dlg .row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.err{color:var(--bad);font-size:13px;margin-top:8px;white-space:pre-wrap}
+table{border-collapse:collapse;width:100%;margin:8px 0 16px;font-size:13px}
+th,td{border:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}td:nth-child(-n+6),th{white-space:nowrap}#admChk td{white-space:normal}#admChk td:last-child{white-space:nowrap}th{background:var(--bg)}
+.md h1{font-size:17px}.md h2{font-size:15px;margin-top:18px}
+.alert{margin:10px auto;max-width:var(--bubw);border:1px solid var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--card));color:var(--bad);border-radius:10px;padding:10px 14px;font-weight:600;white-space:pre-wrap}
+/* 2.9 输入框、插话、暂停 */
+#talk{border-top:1px solid var(--line);padding:8px 20px 0;background:var(--bg)}
+#pauseBar{display:none;margin:0 0 8px;border:2px solid var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--card));color:var(--ink);
+  border-radius:10px;padding:8px 14px;font-weight:600}
+#pauseBar.paused{animation:pausepulse 2s ease-in-out infinite}
+@keyframes pausepulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--warn) 45%,transparent)}50%{box-shadow:0 0 0 6px transparent}}
+#pendBox .pm{font-size:12.5px;border:1px dashed var(--line);border-radius:8px;padding:4px 10px;margin:0 0 6px;white-space:pre-wrap;color:var(--mute)}
+.sayrow{display:flex;gap:8px;align-items:flex-end}
+#say{flex:1;font:inherit;min-height:42px;max-height:220px;resize:vertical;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+#say:disabled{opacity:.55}
+#sayMsg{font-size:12px;color:var(--mute);height:18px;margin:3px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#btnInt.now{background:var(--warn);color:#fff}
+.pill.pause{color:#fff;background:var(--warn);border-color:var(--warn);font-weight:700}
+.pausenote{margin:12px auto;max-width:var(--bubw);border:2px solid var(--warn);border-radius:10px;padding:8px 14px;font-weight:600;
+  background:color-mix(in srgb,var(--warn) 12%,var(--card));white-space:pre-wrap}
+/* 2.10 解说者边栏 */
+#xp{width:360px;flex:none;border-left:1px solid var(--line);background:var(--side);display:none;flex-direction:column;min-height:0}
+body.xpopen #xp{display:flex}
+#xp .xh{padding:14px 14px 8px;display:flex;align-items:center;gap:8px}#xp .xh b{font-size:15px}
+#xp .xnote{font-size:11.5px;color:var(--mute);padding:0 14px 8px;line-height:1.5}
+#xpLog{flex:1;overflow:auto;padding:4px 12px 12px}
+.xm{margin:8px 0;white-space:pre-wrap;word-break:break-word;font-size:13.5px}
+.xm .xw{font-size:11px;color:var(--mute);margin-bottom:2px}
+.xm .xb{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 10px}
+.xm.u .xb{background:color-mix(in srgb,var(--acc) 10%,var(--card))}
+.xm.e .xb{color:var(--bad)}
+#xpIn{padding:8px 12px 12px;border-top:1px solid var(--line)}
+#xpSay{width:100%;font:inherit;min-height:56px;max-height:200px;resize:vertical;padding:7px 9px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+#xpMsg{font-size:12px;color:var(--mute);height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#trustWarn{display:none;border-top:1px solid var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--bg));color:var(--bad);padding:8px 20px;font-size:13px;font-weight:600}
+.mrow{padding:6px;border-radius:8px;margin-bottom:4px}.mrow.dirty{background:var(--card)}
+.mh{font-size:13px;display:flex;gap:6px;align-items:center;margin-bottom:3px}
+.mrow select,.mrow input[type=number]{font:inherit;font-size:13px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.mrow select{width:100%}.mrow input[type=number]{width:52px}
+.mfix{font-size:12px;color:var(--mute);margin-top:4px;line-height:2}.mfix label{margin-right:8px;white-space:nowrap}
+.mdesc{font-size:11px;color:var(--mute);margin-top:2px}
+#memMsg{font-size:12px;margin:6px 6px 0;white-space:pre-wrap}
+.dlg input[type=checkbox]{width:auto}.ack+*{white-space:nowrap}
+.tabs{display:flex;gap:6px;margin-bottom:8px}.tabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.dlg textarea{width:100%;font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-height:90px}
+.lv-红{color:var(--bad);font-weight:600}.lv-黄{color:var(--warn)}.lv-绿{color:var(--ok)}
+.sumbar{display:flex;gap:14px;margin:8px 0;font-size:13px}
+.prow{display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center;margin:4px 0}
+.pend{border:1px solid var(--line);border-radius:10px;padding:10px;margin:10px 0}
+.pend textarea{min-height:120px;font-size:12px}
+.hintx{color:var(--mute);font-size:12px;margin:2px 0 6px}
+pre.log{white-space:pre-wrap;font-size:12px;color:var(--mute);background:var(--bg);padding:8px;border-radius:8px;max-height:200px;overflow:auto}
+/* 2.5 思考框 */
+.tthink{margin:2px 0 6px 44px;max-width:var(--bubw)}
+.tbar{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;border:1px dashed var(--line);color:var(--mute);border-radius:8px;padding:4px 10px;font-size:12px}
+.tbar:hover{border-color:var(--mute);color:var(--ink)}
+.tbar .arr{transition:transform .15s}.tbar[aria-expanded="true"] .arr{transform:rotate(90deg)}
+.tbar .tmore{margin-left:auto}
+.tfull{display:none;margin-top:6px;border:1px solid var(--line);background:var(--card);border-radius:8px;overflow:hidden}
+.tfull.show{display:block}
+.ttools{display:flex;align-items:center;gap:4px;justify-content:flex-end;padding:3px 6px;border-bottom:1px solid var(--line);color:var(--mute);font-size:12px}
+.ttools .tit{margin-right:auto;padding-left:4px}
+.tib{background:transparent;border:0;color:var(--mute);width:28px;height:26px;border-radius:6px;padding:0;display:grid;place-items:center}
+.tib:hover{background:var(--line);color:var(--ink)}
+.tib.done{color:var(--ok)}
+.tib svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ttext{height:15em;overflow-y:auto;padding:8px 12px;font-size:12.5px;color:var(--mute);white-space:pre-wrap;word-break:break-word}
+.tlive{margin:6px 0 6px 44px;max-width:var(--bubw);border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 10px;position:relative}
+.tlive .thead{display:flex;justify-content:space-between;gap:8px;color:var(--warn);font-size:12px;margin-bottom:3px}
+.tlive .tdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--warn);margin-right:6px;animation:breathe 1.4s ease-in-out infinite}
+.tlive .ttext{padding:0 6px 0 0}
+.tjump{display:none;position:absolute;right:18px;bottom:12px;background:var(--warn);color:#1b1b18;border:0;border-radius:14px;padding:2px 12px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.tjump.show{display:block}
+#chat.nothink .tthink,#chat.nothink #liveThink{display:none}
+#mThink{padding:4vh 4vw;align-items:stretch}
+#mThink .tfull{display:flex;flex-direction:column;width:100%;margin:0}
+#mThink .ttext{flex:1;height:auto;font-size:13.5px}
+.chash summary{cursor:pointer;color:var(--mute);font-size:12px;text-align:center}
+.chash pre{font-size:11px;color:var(--mute);background:var(--bg);padding:8px;border-radius:8px;max-height:200px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.prow select{width:100%}
+/* 2.7 表单确认 */
+.fgrid{display:grid;grid-template-columns:160px minmax(0,1fr);gap:12px}
+.flist .fi{padding:6px 8px;border-radius:8px;cursor:pointer;font-size:13px}.flist .fi.on{background:var(--bg)}
+.frow{display:grid;grid-template-columns:110px minmax(0,2fr) minmax(0,1fr) 28px;gap:6px;margin:4px 0;align-items:start}
+.frow.t{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr) 80px minmax(0,1fr) 28px}
+.frow.h{grid-template-columns:110px minmax(0,2fr) minmax(0,1.2fr) 28px}
+.frow input,.frow select,.frow textarea{width:100%;font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.frow textarea{min-height:34px;resize:vertical}
+.fsrc{white-space:pre-wrap;font-size:12.5px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;max-height:140px;overflow:auto}
+.fh{font-size:12px;color:var(--mute);margin:10px 0 2px}
+.fx{background:transparent;border:0;color:var(--mute);padding:2px}
+.cfgrow{border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0}.cfgrow.cur{border-color:var(--acc)}
+</style></head><body>
+<aside>
+  <div class="brand"><img class="logo" src="/icon.png" alt=""><div><b>观者自在</b><small>AlreadyThere · <span id="verline">原型</span></small></div></div>
+  <div class="sec"><h3>项目</h3><div id="projs"></div>
+    <button id="btnBlank" style="width:100%;margin-top:8px" title="在主窗口下方的输入框里粘贴题面，发送后建成一道新题">＋ 新题（在输入框里粘贴题面）</button>
+    <button id="btnNew" style="width:100%;margin-top:6px">＋ 新建项目（从题目文件）</button>
+    <button id="btnAdm" style="width:100%;margin-top:6px">＋ 建题窗口（数学题）</button>
+    <button id="btnPar" style="width:100%;margin-top:6px">参数面板</button>
+    <button id="btnCfg" style="width:100%;margin-top:6px">配置面板（选用已有配置）</button></div>
+  <div class="sec"><h3>准备情况</h3><div id="roles"></div>
+    <button id="btnPing" style="width:100%;margin-top:8px">连通测试</button><div id="pingout"></div></div>
+  <div class="sec"><h3>记忆模式（运行前选好）</h3><div class="hintx" style="margin:0 6px 6px">数学题的含义：生产者——全局＝保留自己的全部轮次，固定＝最近几轮，全新＝只带上一轮；永远看不到其他生产者。审查者每轮固定是全新窗口，这里对它无效。</div><div id="mem"></div>
+    <button id="btnMem" style="width:100%;margin-top:6px" disabled>保存记忆模式</button><div id="memMsg"></div></div>
+</aside>
+<main>
+  <header><div style="min-width:0"><h2 id="title">未选择项目</h2><div class="q" id="question"></div><div class="q" id="timing"></div></div>
+    <button id="btnCopyAll" style="margin-left:auto;font-size:12px;padding:3px 10px;white-space:nowrap" title="复制整个聊天记录（不含思考过程）">复制聊天记录</button>
+    <label style="margin-left:10px;font-size:12px;color:var(--mute);white-space:nowrap"><input type="checkbox" id="chkThink" style="vertical-align:middle"> 显示思考过程</label>
+    <span class="pill" id="status" style="margin-left:10px;display:none"></span>
+    <button id="btnXp" style="margin-left:10px;font-size:12px;padding:3px 10px;white-space:nowrap" title="打开或收起解说者：用大白话问它流程现在在做什么">解说者</button></header>
+  <div id="chat" class="nothink"><div class="empty">左边选一个项目，就能看到几个模型的对质过程。<br>还没有项目的话，点「＋ 新建项目」。</div></div>
+  <div id="talk">
+    <div id="pauseBar"></div>
+    <div id="pendBox"></div>
+    <div class="sayrow"><textarea id="say" placeholder="粘贴题面（口径写在题面里），发送后建成一道新题。Ctrl+Enter 发送"></textarea>
+      <button class="primary" id="btnSay">发送</button></div>
+    <div id="sayMsg"></div>
+  </div>
+  <div id="trustWarn">⚠ 这个项目的题目文件里没有可信网站名单（trusted_sites）：审查者的独立核验不会启动，任何条目都不可能判为"查到"。如果不是有意这样，请换用带名单的题目文件（如 明清皇帝生肖.json）新建项目。</div>
+  <footer>
+    <button class="primary" id="btnRun" disabled>开始运行</button>
+    <button id="btnInt" style="display:none;border-color:var(--warn);color:var(--warn)" title="等正在跑的调用全部返回后暂停，可以补充信息">打断</button>
+    <button id="btnStop" style="display:none;border-color:var(--bad);color:var(--bad)">停止运行</button>
+    <button id="btnCon" disabled>看结论</button>
+    <button id="btnDetail" disabled>详细记录</button>
+    <button id="btnPend" style="display:none">待人工判断</button>
+    <button id="btnForm" style="display:none;border-color:var(--warn);color:var(--warn)">确认表单</button>
+    <button id="btnBare" style="display:none" title="每个生产者只拿题目本身各答一次，和流程的结果并排写进结论">裸题对照</button>
+    <button id="btnAttr" style="display:none" title="结果不对时，判断错在表单还是做题">错误归因</button>
+    <span class="hint" id="hint"></span>
+  </footer>
+</main>
+<aside id="xp">
+  <div class="xh"><b>解说者</b><span class="quiet" id="xpModel" style="margin:0"></span><button id="xpClose" style="margin-left:auto;font-size:12px;padding:2px 8px">收起</button></div>
+  <div class="xnote">问它流程现在在做什么、做过什么、接下来做什么。它只读不写：它的话不进流程、不发给任何角色，也不是验证结果。题目请自己在主窗口输入框里提交。</div>
+  <div id="xpLog"></div>
+  <div id="xpIn"><textarea id="xpSay" placeholder="问解说者。Ctrl+Enter 发送"></textarea>
+    <div class="row" style="display:flex;gap:8px;align-items:center;margin-top:6px"><span id="xpMsg" style="flex:1"></span><button class="primary" id="xpSend">发送</button></div></div>
+</aside>
+<div class="mask" id="mNew"><div class="dlg"><h3>新建项目</h3>
+  <label>题目</label><select id="qsel"></select>
+  <div class="err" id="qwarn"></div>
+  <div id="pickBox" style="display:none"><label>要做哪些题（勾选；先少量测试，默认只勾第 1 题）</label>
+    <div class="hintx" id="pickCnt"></div>
+    <div class="row" style="justify-content:flex-start;gap:8px;margin:4px 0"><button id="pickAll" type="button">全选</button><button id="pickNone" type="button">全不选</button></div>
+    <div id="pickList" style="max-height:220px;overflow:auto;border:1px solid var(--line,#ddd);border-radius:6px;padding:6px"></div></div>
+  <label>项目名字</label><input id="pname" maxlength="60">
+  <div class="err" id="newErr"></div>
+  <div class="row"><button onclick="hide('mNew')">取消</button><button class="primary" id="btnCreate">创建</button></div></div></div>
+<div class="mask" id="mCon"><div class="dlg wide"><h3 id="conTitle">结论</h3><div class="md" id="conBody"></div>
+  <div class="row"><button onclick="hide('mCon')">关闭</button></div></div></div>
+<div class="mask" id="mOffline"><div class="dlg"><h3>⚠ 有角色停下了</h3><div class="err" id="offBody" style="color:var(--ink)"></div>
+  <div class="row"><button class="primary" onclick="hide('mOffline')">知道了</button></div></div></div>
+<div class="mask" id="mAdm"><div class="dlg wide"><h3>建题窗口 · 数学最终答案题</h3>
+  <div class="hintx">这张表由你自己填。目的是在花钱之前把题目问清楚：题面是否完整、有没有标准答案、有没有重复。程序只做确定性的检查，不调用模型。</div>
+  <div class="tabs"><button id="tabFile" class="on">导入题库文件</button><button id="tabHand">手写一道题</button></div>
+  <div id="admFile"><input type="file" id="admF" accept=".csv,.json,.jsonl"><div class="hintx">支持 csv / json / jsonl。parquet 文件请先用 tools 里的转换脚本转成 jsonl。</div></div>
+  <div id="admHand" style="display:none"><label>题面</label><textarea id="hProb"></textarea><label>标准答案（只写最终答案）</label><input id="hGold">
+    <div class="row"><button id="hGo" class="primary">检查这道题</button></div></div>
+  <div id="admMap"></div><div id="admChk"></div>
+  <div class="err" id="admErr"></div>
+  <div class="row"><button onclick="hide('mAdm')">关闭</button></div></div></div>
+<div class="mask" id="mPar"><div class="dlg wide"><h3>参数面板</h3><div id="parBody"></div><div class="err" id="parMsg"></div>
+  <div class="row"><button onclick="hide('mPar')">关闭</button><button class="primary" id="parSave">保存</button></div></div></div>
+<div class="mask" id="mPend"><div class="dlg wide"><h3>待人工判断</h3>
+  <div class="hintx">程序没法确定下面两个答案是否等价。可以点「复制提示词」去问别的模型，然后由你判断「对」或「错」；你的判断会记入账本，来源标为人工判断。</div>
+  <div id="pendBody"></div><div class="row"><button onclick="hide('mPend')">关闭</button></div></div></div>
+<div class="mask" id="mForm"><div class="dlg wide" style="width:min(1280px,96vw)"><h3>确认表单</h3>
+  <div class="hintx">做题的人只看这张表单、看不到原题。每一项都可以直接改；Ctrl+Z 一步步撤销，「全部撤销」恢复成模型起草的版本。改动会留痕（模型起草版、你的改动、冻结版）。确认后冻结；全部确认后点「继续运行」开始做题。</div>
+  <div class="fgrid"><div class="flist" id="fList"></div><div id="fBody"></div></div>
+  <div class="err" id="fMsg"></div>
+  <div class="row"><button onclick="hide('mForm')">关闭</button><button id="fAll">未修改的一次全部确认</button></div></div></div>
+<div class="mask" id="mCfg"><div class="dlg wide"><h3>配置面板 · 选用已有配置</h3>
+  <div class="hintx">选一个配置换上，就不用手动复制、改名设置文件了。换上前会自动把现在的设置备份成「设置_备份_日期时间.json」，备份也会出现在这个列表里，随时可以换回去。密钥不在配置里，仍然从「密钥.env」读取。</div>
+  <div id="cfgBody"></div><div class="err" id="cfgMsg"></div>
+  <div class="row"><button onclick="hide('mCfg')">关闭</button></div></div></div>
+<div class="mask" id="mAttr"><div class="dlg wide"><h3>错误归因</h3>
+  <div class="hintx">结果不对、或有争议时，判断问题出在哪：表单（题意拆错了）还是做题。只能由人判断：能判断就标，判断不了就选「判断不了」，留给能判断的人看。标注会记入账本、写进结论。</div>
+  <div id="attrBody"></div><div class="row"><button onclick="hide('mAttr')">关闭</button></div></div></div>
+<div class="mask" id="mThink"><div class="tfull show"><div class="ttools"><span class="tit" id="bigTit">思考过程</span>
+  <button class="tib" data-tact="copy" title="复制全文"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></button>
+  <button class="tib" data-tact="close" title="关闭（Esc）"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="ttext" id="bigTxt"></div></div></div>
+<script>
+const $=id=>document.getElementById(id);
+let S={}, cur=null, last=0, lastRound=null, colors={}, running=false, question={}, trusted=true, memDirty=false;
+let roleStates={}, roleUsage={};  // 2.0 界面待办：/api/feed 里带回来的实时状态与用量，按角色编号存
+const pal=['--c0','--c1','--c2','--c3','--c4'];
+// 状态点颜色（绿/黄/红）与是否呼吸：在线=绿不动，工作中=绿呼吸，响应中=黄呼吸，离线=红不动
+const STATE_DOT={'在线':'c-g','工作中':'c-g breathe','响应中':'c-y breathe','离线':'c-r'};
+// 显示文字与内部状态名分开：内部/CSS 类名不变，只是拟人化一下显示出来的词
+const STATE_LABEL={'在线':'精神饱满','工作中':'努力工作','响应中':'头有点晕','离线':'快来抢救'};
+function color(role){if(role==='程序')return 'var(--mute)';if(role==='用户')return 'var(--ink)';
+  if(!(role in colors))colors[role]=pal[Object.keys(colors).length%pal.length];return 'var('+colors[role]+')'}
+function renderRoles(){
+  const R=$('roles');if(!S.roles)return;
+  if(S.error){R.innerHTML='<div class="err">'+esc(S.error)+'</div>';return}
+  const cards=S.roles.map(r=>{
+    const st=(roleStates[r.role]&&roleStates[r.role].state)||'在线';
+    const dotcls=STATE_DOT[st]||'c-g';
+    const dots=(st==='工作中'||st==='响应中')?'<span class="dots"></span>':'';
+    const retry=(st==='响应中'&&roleStates[r.role]&&roleStates[r.role].retry>0)
+      ?`<span class="rretry">（第 ${esc(roleStates[r.role].retry)} 次重试）</span>`:'';
+    const rs=roleStates[r.role];
+    // 2.11：同一角色同时有几次调用时，秒数取最久的一次、字数合计，并逐个列出在做什么；"疑似循环"等附注单独一行
+    const many=rs&&rs.n>1;
+    const prog=(rs&&(st==='工作中'||st==='响应中'))?`<div class="rusage">${many?`同时 ${rs.n} 个调用：${(rs.calls||[]).map(c=>esc(c.label)+(c.problem?'（有问题）':'')).join('、')}<br>最久已 `:'已 '}${esc(rs.elapsed||0)} 秒<br>思考${many?'合计':''} ${(rs.think||0).toLocaleString()} 字<br>输出${many?'合计':''} ${(rs.out||0).toLocaleString()} 字</div>`
+      +((rs.notes&&rs.notes.length)?`<div class="rusage" style="color:var(--warn)">${rs.notes.map(esc).join('<br>')}</div>`:''):'';
+    const u=roleUsage[r.role]||{};
+    const usage=`输入 ${(u.in||0).toLocaleString()}<br>输出 ${(u.out||0).toLocaleString()}`+
+      (r.kind==='生产者'?`<br>检索 ${u.search||0} 次`:'');
+    return `<div class="rcard" title="${esc(r.model)}">
+      <div class="rav st-${st}" style="background:${color(r.role)}">${esc(r.role)}<span class="sdot ${dotcls}"></span></div>
+      <div class="rname">${esc(r.kind)} · ${esc(r.name)}</div>
+      <div class="rmodel">${esc(r.model)}</div>
+      <div class="rstate st-${st}">${esc(STATE_LABEL[st]||st)}${dots}${retry}</div>
+      ${prog}<div class="rusage">${usage}</div>
+    </div>`}).join('');
+  R.innerHTML=`<div class="rolegrid">${cards}</div>`
+    +`<div class="role"><span class="dot ${S.search_key?'on':''}"></span>检索（Tavily）</div>`
+    +(S.secrets_file?'':'<div class="err">还没有 密钥.env 文件（放在数据文件夹里）</div>')
+    +(S.data_dir?`<div class="quiet" style="margin:6px 6px 0;word-break:break-all">数据文件夹：${esc(S.data_dir)}</div>`:'')
+    +(S.moved&&S.moved.length?`<div class="quiet" style="margin:4px 6px 0;color:var(--ok)">已从旧版本复制过来：${esc(S.moved.join('；'))}（原处未删除）</div>`:'')}
+// 2.10：时间显示（账本里是 UTC，按本机时区显示成 年-月-日 时:分:秒）
+function fmtTs(ts){if(!ts)return '';const d=new Date(String(ts).replace(/(\.\d{3})\d+/,'$1'));if(isNaN(d))return '';
+  const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes())+':'+z(d.getSeconds())}
+function fmtDur(s){if(s==null)return '—';s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
+  return (h?h+' 小时 ':'')+(h||m?m+' 分 ':'')+x+' 秒'}
+function renderTiming(tm,running){const el=$('timing');if(!tm||!tm.start){el.textContent='';return}
+  let t='开始 '+fmtTs(tm.start);
+  if(tm.old){el.textContent=t+(tm.end?' · 结束 '+fmtTs(tm.end):'')+' · （2.10 以前的项目：没有运行时间记录，算不出真正在跑的时间）';return}
+  const st=Object.entries(tm.stops||{}).filter(([k,v])=>v>0);
+  const stx=st.length?'（另停下 '+fmtDur(st.reduce((a,[k,v])=>a+v,0))+'：'+st.map(([k,v])=>k+' '+fmtDur(v)).join('，')+'）':'';
+  t+=tm.end?' · 结束 '+fmtTs(tm.end)+' · 总用时 '+fmtDur(tm.run_seconds)+stx:' · 已运行 '+fmtDur(tm.run_seconds)+stx;
+  el.textContent=t}
+function esc(s){return (s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+async function get(u){const r=await fetch(u);return r.json()}
+async function post(u,b){const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json','X-AlreadyThere':'1'},body:JSON.stringify(b||{})});return r.json()}
+function show(id){$(id).classList.add('show')} function hide(id){$(id).classList.remove('show')}
+
+async function refresh(){
+  try{S=await get('/api/state')}catch(e){return}
+  renderRoles();
+  if(S.version)$('verline').innerHTML='v'+esc(S.version)+' · <span title="代码总哈希（'+esc(S.files)+' 个文件）：'+esc(S.code_hash)+'" style="cursor:help">哈希 '+esc((S.code_hash||'').slice(0,8))+'</span>';
+  if(!memDirty)renderMem();
+  $('projs').innerHTML=S.projects.length?S.projects.map(p=>`<div class="proj ${p.name===cur?'sel':''}" data-n="${esc(p.name)}"><span>${esc(p.name)}</span>`+
+    (p.running?'<span class="pill run">运行中</span>':p.paused?'<span class="pill pause">已暂停</span>':p.done?(p.finished?'<span class="pill done">已完成</span>':'<span class="pill">已停止</span>'):'<span class="pill">未完成</span>')+'</div>').join('')
+    :'<div class="quiet" style="margin:0 6px">还没有项目</div>';
+  document.querySelectorAll('.proj').forEach(el=>el.onclick=()=>select(el.dataset.n));
+  $('btnPing').disabled=S.ping.running;
+  $('pingout').textContent=S.ping.lines.join('\n');
+  const p=S.projects.find(x=>x.name===cur);
+  if(p){running=p.running;$('status').style.display='';$('status').className='pill '+(p.paused?'pause':p.running?'run':p.done?'done':'');
+    $('status').textContent=p.paused?'已暂停：等你补充':p.pausing?'运行中 · 跑完这一步后暂停':p.running?'运行中':p.done?(p.finished?'已完成':'已停止（未完成）'):'未完成';
+    $('btnStop').style.display=p.running?'':'none';$('btnRun').disabled=p.running;$('btnRun').textContent=p.running?'运行中…':(p.done?'再运行一次':last>2?'继续运行':'开始运行');
+    $('btnCon').disabled=!p.done;$('btnDetail').disabled=false;
+    $('btnBare').style.display=isMath()?'':'none';$('btnBare').disabled=p.running;
+    $('btnAttr').style.display=isMath()&&FV.form&&p.done?'':'none';
+    if(!p.running)loadForms();
+    const miss=(S.roles||[]).filter(r=>!r.key).map(r=>r.name);if(!S.search_key)miss.push('Tavily');
+    $('hint').textContent=p.running?'运行中，可以关掉窗口，不会打断；重新打开能接着看。':miss.length?'密钥还没填全：'+miss.join('、'):'';}
+  renderTalk();
+}
+// ---------- 2.9 输入框：建题、插话、暂停 ----------
+let talk={},talkKey='';
+function renderTalk(){
+  const p=(S.projects||[]).find(x=>x.name===cur);const bar=$('pauseBar'),say=$('say');
+  const k=p?[p.name,p.running,p.paused,p.pausing,p.finished].join('|'):'';if(k!==talkKey){if(talkKey&&k.split('|')[0]===talkKey.split('|')[0])$('sayMsg').textContent='';talkKey=k}
+  let ph,dis=false;
+  if(!p){$('btnInt').style.display='none';ph='粘贴题面（口径写在题面里），发送后建成一道新题。Ctrl+Enter 发送';bar.style.display='none';$('pendBox').innerHTML='';$('btnSay').disabled=false;if(document.activeElement!==say){say.disabled=false;say.placeholder=ph}return}
+  bar.className='';bar.style.display='none';
+  if(p.paused){bar.style.display='block';bar.className='paused';
+    bar.textContent='已暂停：等你补充。可以接着发好几条；补充完点下方「继续运行」，所有角色（生产者、审查者、找茬者）都会收到。';
+    ph='继续补充。补充完点「继续运行」。Ctrl+Enter 发送'}
+  else if(p.running&&p.pausing){bar.style.display='block';
+    const w=(talk.waiting||[]);bar.textContent='正在等这一步全部返回，之后暂停'+(w.length?'（还在跑：'+w.join('、')+'）':'')+'。还没停下，可以接着发。';
+    ph='接着补充。Ctrl+Enter 发送'}
+  else if(p.running)ph='插话：补充信息或下指令。发送后，等正在跑的这一步全部返回再暂停。Ctrl+Enter 发送';
+  else if(p.finished){ph='这个项目的流程已经结束。要问新题，点左边「＋ 新题」。';dis=true}
+  else if(!p.started)ph='补充题目没说清楚的地方（例如口径）。开始运行后所有角色都会收到。Ctrl+Enter 发送';
+  else{ph='这个项目被停止了，不在暂停中：先点「继续运行」，运行中再发话。';dis=true}
+  // 你在输入框里时完全不碰它（提示文字、禁用都等你离开再更新），防止吞字、输入法候选框跑位；不能发的情况由发送时的提示说明
+  if(document.activeElement!==say){say.placeholder=ph;say.disabled=dis}
+  $('btnSay').disabled=dis;
+  const bi=$('btnInt');bi.style.display=p.running&&p.cmd==='run'?'':'none';
+  bi.textContent=p.pausing?'直接打断':'打断';bi.classList.toggle('now',!!p.pausing);
+  bi.title=p.pausing?'不再等正在跑的调用，立即打断；这些调用作废、不补':'等正在跑的调用全部返回后暂停，可以补充信息';
+  const pm=talk.pending_msgs||[];
+  $('pendBox').innerHTML=pm.map(m=>`<div class="pm">待送达（${esc(m.ts)}）：${esc(m.text)}</div>`).join('');
+}
+async function sendSay(){
+  const t=$('say').value.trim();if(!t)return;$('btnSay').disabled=true;$('sayMsg').textContent='发送中……';
+  let r;try{r=await post('/api/say',{name:cur||'',text:t})}catch(e){r={ok:false,msg:'发送失败：'+e}}
+  $('btnSay').disabled=false;
+  if(!r.ok){$('sayMsg').textContent=r.msg||'没发出去';return}
+  $('say').value='';
+  if(!cur&&r.name){await refresh();await select(r.name);$('sayMsg').textContent='已建成新题「'+r.name+'」。点下方「开始运行」。';return}
+  $('sayMsg').textContent=r.msg||'';await refresh();pull()}
+$('btnSay').onclick=sendSay;
+$('btnInt').onclick=async()=>{
+  const p=(S.projects||[]).find(x=>x.name===cur);if(!p)return;
+  if(!p.pausing){const r=await post('/api/interrupt',{name:cur});if(!r.ok)alert(r.msg);await refresh();pull();return}
+  const fl=(talk.inflight||[]);
+  const who=fl.length?fl.map(x=>roleLabel(x.role)+' '+(x.label||'')+(x.seconds!=null?'（已等 '+x.seconds+' 秒）':'')).join('、'):'正在跑的调用';
+  if(!confirm('现在正在等 '+who+' 的调用结束，等完就会暂停。\n\n直接打断会作废这些调用，之后也不会补做（已收到的思考会存进账本，只供查看）。确定直接打断吗？'))return;
+  $('btnInt').disabled=true;const r=await post('/api/interrupt_now',{name:cur});$('btnInt').disabled=false;
+  if(!r.ok)alert(r.msg);await refresh();pull()};
+$('say').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();sendSay()}});
+$('btnBlank').onclick=()=>{cur=null;xpKey=null;setTimeout(()=>loadXp(true),0);last=0;lastRound=null;$('title').textContent='新题';$('question').textContent='';$('timing').textContent='';
+  $('status').style.display='none';['btnRun','btnCon','btnDetail'].forEach(b=>$(b).disabled=true);$('btnStop').style.display='none';
+  setChat('<div class="empty">在下方输入框里粘贴题面（口径写在题面里），发送后建成一道新题。<br>不用填标准答案。</div>');
+  $('sayMsg').textContent='';refresh();$('say').focus()};
+async function select(n){cur=n;talk={};xpKey=null;setTimeout(()=>loadXp(true),0);$('sayMsg').textContent='';trusted=true;$('trustWarn').style.display='none';last=0;lastRound=null;colors={};setChat('');$('title').textContent=n;
+  roleStates={};roleUsage={};renderRoles();
+  $('question').textContent='';$('timing').textContent='';$('btnPend').style.display='none';$('btnForm').style.display='none';refresh();pull();loadPend();loadForms()}
+function setChat(h){$('chat').innerHTML=(h||'')+'<div id="liveThink"></div>'}
+function atBottom(){const c=$('chat');return c.scrollHeight-c.scrollTop-c.clientHeight<80}
+function add(m){
+  const c=$('chat');let h='';
+  if(m.round!=null&&m.round!==lastRound){lastRound=m.round;h+=`<div class="divider">第 ${m.round} 轮</div>`}
+  if(m.kind==='alert')h+=`<div class="alert">⚠ ${esc(m.text)}</div>`;
+  else if(m.kind==='pause')h+=`<div class="pausenote">${esc(m.text)}<span class="ntime">${fmtTs(m.ts)}</span></div>`;
+  else if(m.kind==='banner')h+=`<div class="banner"><span>${esc(m.text)}</span></div>`;
+  else if(m.kind==='system'||m.kind==='warn'&&m.role==='程序')h+=`<div class="note ${m.kind==='warn'?'warn':''}">${esc(m.text)}</div>`;
+  else if(m.kind==='quiet')h+=`<div class="quiet">${esc(m.speaker)} · ${esc(m.text)}</div>`;
+  else{
+    const cls=m.kind==='review_ok'?'ok':m.kind==='review_bad'||m.kind==='warn'?'bad':m.kind==='opinion'?'op':'';
+    let chk='';if(m.check){const k=m.check.ok===true?'y':m.check.ok===false?'n':'u';
+      chk=`<div class="chk ${k}">${k==='y'?'✓ ':k==='n'?'⚠ 程序拦下：':'· '}${esc(m.check.text)}</div>`}
+    h+=`<div class="msg"><div class="av" style="background:${color(m.role)}">${esc((m.speaker||'?')[0])}</div><div style="min-width:0">
+      <div class="who"><b>${esc(m.speaker)}</b>${m.tag?esc(m.tag):''}<span class="ts">${fmtTs(m.ts)}</span><button class="tib bcopy" data-bcopy title="复制这条">${ICO_COPY}</button></div><div class="bub ${cls}">${esc(m.text)}${chk}</div></div></div>`}
+  if(m.think&&m.think.call)h+=thinkBox(m);
+  if(m.codehash){const cur=S.code_hash&&S.code_hash!==m.codehash.total?'<div class="note warn">注意：当前运行的程序内容与创建这个项目时不同（版本号相同也可能内容不同，以哈希为准）。</div>':'';
+    h+=cur+`<details class="chash"><summary>代码哈希：版本 ${esc(m.codehash.version)}，总哈希 ${esc(m.codehash.total.slice(0,16))}…（点开看每个文件）</summary><pre>总哈希：${esc(m.codehash.total)}\n${Object.entries(m.codehash.files).map(([k,v])=>esc(k)+'  '+esc(v)).join('\n')}</pre></details>`}
+  const lt=$('liveThink');if(lt)lt.insertAdjacentHTML('beforebegin',h);else c.insertAdjacentHTML('beforeend',h);
+  if(m.popup){$('offBody').textContent=m.text;show('mOffline')}}  // 2.0 界面待办：离线要弹窗，内容用后端已经写好的具体原因，不管这条消息走的是哪个渲染分支都要弹
+
+// ---------- 2.7 表单确认（一行一个可编辑输入框；Ctrl+Z 撤销；全部撤销需二次确认） ----------
+const FIELDS=['条件','范围','所求','完成标准','排除项'],RANGES=['相等','更窄','更宽'];
+let FV=null,fCur=null,fWork={},fHist={};
+function isMath(){return !!cur&&!!(FV&&FV.math)}
+async function loadForms(){if(!cur)return;try{FV=await get('/api/forms?p='+encodeURIComponent(cur))}catch(e){return}
+  const waiting=FV.ok&&FV.math&&FV.items.some(x=>x.状态==='待确认');
+  $('btnForm').style.display=FV.ok&&FV.math&&FV.items.some(x=>x.状态!=='表单阶段未结束')?'':'none';
+  $('btnForm').textContent=waiting?'确认表单（'+FV.items.filter(x=>x.状态==='待确认').length+' 题待确认）':'查看表单';
+  const p=(S.projects||[]).find(x=>x.name===cur);$('btnBare').style.display=isMath()?'':'none';
+  $('btnAttr').style.display=isMath()&&FV.form&&p&&p.done?'':'none'}
+function clone(o){return JSON.parse(JSON.stringify(o||{items:[],terms:[],implicit:[]}))}
+function opts(list,v){return list.map(x=>`<option ${x===v?'selected':''}>${esc(x)}</option>`).join('')}
+function fRender(){const x=FV.items.find(y=>y.id===fCur);if(!x){$('fBody').innerHTML='';return}
+  $('fList').innerHTML=FV.items.map(y=>`<div class="fi ${y.id===fCur?'on':''}" data-f="${esc(y.id)}">${esc(y.id)}<br><span class="pill ${y.状态==='已冻结'?'done':''}">${esc(y.状态)}</span></div>`).join('');
+  document.querySelectorAll('[data-f]').forEach(e=>e.onclick=()=>{fCur=e.dataset.f;fRender()});
+  if(x.状态==='表单阶段未结束'){$('fBody').innerHTML='<div class="quiet">这道题的表单阶段还没结束。</div>';return}
+  const ro=!x.可改||x.状态==='已冻结';const f=ro?(x.冻结版||x.候选):fWork[fCur];
+  const dis=ro?'disabled':'';
+  let h=`<div class="fh">题面原文（只读）</div><div class="fsrc">${esc(x.题面)}</div>`;
+  h+=`<div class="fh">表单阶段：${esc(x.表单阶段||'')}（${esc(x.轮数||'')} 轮）${x.原因?'；原因：'+esc(x.原因):''}${ro?'；<b>只读</b>（'+(x.状态==='已冻结'?'已冻结':'已开始做题')+'）':''}</div>`;
+  const add=Object.entries(x.补词||{}).filter(([k,v])=>v&&v.length).map(([k,v])=>k+'：'+v.map(a=>'第'+a.项+'项【'+a.补词+'】').join('、'));
+  if(add.length)h+=`<div class="hintx">补词（含模型判断）：${esc(add.join('；'))}</div>`;
+  const hints=Object.entries(x.提示||{}).filter(([k,v])=>v&&v.length).map(([k,v])=>k+'：'+v.join('；'));
+  if(hints.length)h+=`<div class="hintx">程序提示：${esc(hints.join('；'))}</div>`;
+  h+=`<div class="fh">原文项（栏目｜原文片段｜中文参考）</div>`;
+  (f.items||[]).forEach((it,i)=>{h+=`<div class="frow"><select ${dis} data-k="items.${i}.field">${opts(FIELDS,it.field)}</select><textarea ${dis} data-k="items.${i}.text">${esc(it.text)}</textarea><input ${dis} data-k="items.${i}.zh" value="${esc(it.zh||'')}" placeholder="中文参考（可空）"><button class="fx" ${dis} data-del="items.${i}" title="删掉这一项">✕</button></div>`});
+  if(!ro)h+=`<button data-addrow="items">＋ 加一项</button>`;
+  h+=`<div class="fh">术语展开（原词｜完整定义｜实际要算｜范围比较｜丢掉了什么）</div>`;
+  (f.terms||[]).forEach((t,i)=>{h+=`<div class="frow t"><input ${dis} data-k="terms.${i}.term" value="${esc(t.term)}"><textarea ${dis} data-k="terms.${i}.definition">${esc(t.definition)}</textarea><textarea ${dis} data-k="terms.${i}.compute">${esc(t.compute)}</textarea><select ${dis} data-k="terms.${i}.range">${opts(RANGES,t.range)}</select><input ${dis} data-k="terms.${i}.lost" value="${esc(t.lost||'')}"><button class="fx" ${dis} data-del="terms.${i}">✕</button></div>`});
+  if(!ro)h+=`<button data-addrow="terms">＋ 加一条术语</button>`;
+  h+=`<div class="fh">隐含项（含模型判断：栏目｜内容｜理由）</div>`;
+  (f.implicit||[]).forEach((t,i)=>{h+=`<div class="frow h"><select ${dis} data-k="implicit.${i}.field">${opts(FIELDS,t.field)}</select><textarea ${dis} data-k="implicit.${i}.content">${esc(t.content)}</textarea><textarea ${dis} data-k="implicit.${i}.reason">${esc(t.reason)}</textarea><button class="fx" ${dis} data-del="implicit.${i}">✕</button></div>`});
+  if(!ro)h+=`<button data-addrow="implicit">＋ 加一条隐含项</button>`;
+  const others=Object.entries(x.各方表单||{});
+  if(others.length>1)h+=`<details style="margin-top:10px"><summary class="hintx" style="cursor:pointer">看各生产者自己的表单（只读）</summary>${others.map(([k,v])=>'<div class="fh">生产者'+esc(k)+'</div><pre class="log">'+esc((v.items||[]).map((a,i)=>(i+1)+'.〔'+a.field+'〕'+a.text).join('\n')+((v.implicit||[]).length?'\n隐含项：'+v.implicit.map(a=>a.content).join('；'):''))+'</pre>').join('')}</details>`;
+  if(!ro)h+=`<div class="row" style="justify-content:flex-start"><button id="fUndo">撤销上一步（Ctrl+Z）</button><button id="fReset" style="border-color:var(--bad);color:var(--bad)">全部撤销（恢复模型起草版）</button><span style="flex:1"></span><button class="primary" id="fOk">确认这道题</button></div>`;
+  $('fBody').innerHTML=h;
+  if(ro)return;
+  $('fBody').querySelectorAll('[data-k]').forEach(el=>{el.addEventListener('focus',()=>{el._snap=JSON.stringify(fWork[fCur])});
+    el.addEventListener('change',()=>{const before=el._snap||JSON.stringify(fWork[fCur]);const [a,i,k]=el.dataset.k.split('.');fWork[fCur][a][+i][k]=el.value;
+      if(before!==JSON.stringify(fWork[fCur])){(fHist[fCur]=fHist[fCur]||[]).push(before)}el._snap=JSON.stringify(fWork[fCur])})});
+  $('fBody').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const [a,i]=b.dataset.del.split('.');(fHist[fCur]=fHist[fCur]||[]).push(JSON.stringify(fWork[fCur]));fWork[fCur][a].splice(+i,1);fRender()});
+  $('fBody').querySelectorAll('[data-addrow]').forEach(b=>b.onclick=()=>{const a=b.dataset.addrow;(fHist[fCur]=fHist[fCur]||[]).push(JSON.stringify(fWork[fCur]));
+    fWork[fCur][a].push(a==='items'?{field:'条件',text:'',zh:''}:a==='terms'?{term:'',definition:'',compute:'',range:'相等',lost:''}:{field:'条件',content:'',reason:''});fRender()});
+  $('fUndo').onclick=fUndo;
+  $('fReset').onclick=()=>{if(!confirm('全部撤销：把这道题的表单恢复成模型起草的版本，你的所有修改都会丢掉。\n\n确定吗？'))return;
+    (fHist[fCur]=fHist[fCur]||[]).push(JSON.stringify(fWork[fCur]));fWork[fCur]=clone(x.候选);fRender()};
+  $('fOk').onclick=async()=>{document.activeElement&&document.activeElement.blur();$('fMsg').textContent='正在确认…';
+    const r=await post('/api/form/confirm',{name:cur,item:fCur,form:fWork[fCur]});
+    if(!r.ok){$('fMsg').textContent=r.msg;return}
+    $('fMsg').textContent=fCur+' 已冻结（第 '+r.版本+' 版，改动 '+r.改动+' 处'+(r.不在原文里&&r.不在原文里.length?'；注意：有 '+r.不在原文里.length+' 处改写后的文字不在题面原文里，已记录':'')+'）。';
+    await loadForms();fRender();if(FV.all_frozen)$('fMsg').textContent+=' 全部表单都已确认，关闭后点「继续运行」开始做题。'}}
+function fUndo(){const h=fHist[fCur]||[];if(!h.length)return;fWork[fCur]=JSON.parse(h.pop());fRender()}
+document.addEventListener('keydown',e=>{if($('mForm').classList.contains('show')&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!e.shiftKey){
+  const x=FV&&FV.items.find(y=>y.id===fCur);if(x&&x.可改&&x.状态!=='已冻结'){e.preventDefault();document.activeElement&&document.activeElement.blur();fUndo()}}});
+$('btnForm').onclick=async()=>{await loadForms();if(!FV.ok)return;
+  FV.items.forEach(x=>{if(!(x.id in fWork)&&x.候选)fWork[x.id]=clone(x.候选)});
+  fCur=(FV.items.find(x=>x.状态==='待确认')||FV.items[0]).id;$('fMsg').textContent='';fRender();show('mForm')};
+$('fAll').onclick=async()=>{const edited=Object.keys(fWork).filter(k=>{const x=FV.items.find(y=>y.id===k);return x&&x.状态==='待确认'&&JSON.stringify(fWork[k])!==JSON.stringify(x.候选)});
+  if(!confirm('把所有还没确认的题按模型起草的版本一次确认（'+(edited.length?'你改过的 '+edited.join('、')+' 不在内，请逐题确认':'没有改过的题')+'）。\n\n确定吗？'))return;
+  const r=await post('/api/form/confirm_all',{name:cur});$('fMsg').textContent=r.ok?'已确认 '+r.done+' 题。':r.msg;await loadForms();fRender()};
+// ---------- 2.7 裸题对照 ----------
+$('btnBare').onclick=async()=>{if(!cur)return;if(!confirm('裸题对照：每个生产者只拿题目本身（不加任何角色说明和格式要求）各答一次，结果和流程的结果并排写进结论。\n\n这会产生真实调用费用（每个生产者每道题一次）。确定吗？'))return;
+  const r=await post('/api/bare',{name:cur});if(!r.ok)alert(r.msg);refresh()};
+// ---------- 2.7 错误归因 ----------
+const ATTRS=['表单正确、错在做题','表单有误','判断不了'];
+$('btnAttr').onclick=async()=>{const r=await get('/api/attr?p='+encodeURIComponent(cur));
+  $('attrBody').innerHTML=(r.items||[]).length?r.items.map(x=>`<div class="pend"><b>${esc(x.id)}</b>　结果：${esc(x.状态||'')}　已标：${esc(x.归因||'未标')}
+    <div class="row" style="justify-content:flex-start">${ATTRS.map(a=>`<button data-at="${esc(x.id)}" data-v="${esc(a)}">${esc(a)}</button>`).join('')}<input data-note="${esc(x.id)}" placeholder="备注（可空）" style="flex:1;font:inherit;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)" value="${esc(x.note||'')}"></div></div>`).join(''):'还没有出结果的题。';
+  document.querySelectorAll('[data-at]').forEach(b=>b.onclick=async()=>{const note=document.querySelector(`[data-note="${b.dataset.at}"]`).value;
+    const r2=await post('/api/attr',{name:cur,item:b.dataset.at,value:b.dataset.v,note});if(!r2.ok)alert(r2.msg);else $('btnAttr').click()});
+  show('mAttr')};
+// ---------- 2.7 配置面板 ----------
+$('btnCfg').onclick=async()=>{const r=await get('/api/configs');$('cfgMsg').textContent='';
+  $('cfgBody').innerHTML=(r.items||[]).map(x=>`<div class="cfgrow ${x.current?'cur':''}"><b>${esc(x.name)}</b> <span class="pill">${esc(x.where)}</span>${x.current?' <span class="pill done">现在用的</span>':''}
+    <div class="hintx">${esc(x.roles)}</div>${x.note?`<div class="hintx">${esc(x.note)}</div>`:''}
+    ${x.current?'':`<div class="row" style="justify-content:flex-start;margin-top:4px"><button data-cfg="${esc(x.key)}">换上这个配置</button></div>`}</div>`).join('')||'没有找到配置文件。';
+  document.querySelectorAll('[data-cfg]').forEach(b=>b.onclick=async()=>{if(!confirm('换上「'+b.dataset.cfg.split(':')[1]+'」？现在的设置会先自动备份。'))return;
+    const r2=await post('/api/configs/apply',{key:b.dataset.cfg});
+    if(!r2.ok){$('cfgMsg').textContent=r2.msg;return}
+    $('cfgMsg').textContent='已换上'+(r2.backup?'；原来的设置备份成了「'+r2.backup+'」':'')+'。换了配置后，建议先点「连通测试」。';refresh();$('btnCfg').click()})
+  show('mCfg')};
+// ---------- 2.5 思考过程显示 ----------
+let showThink=true;try{showThink=localStorage.getItem('gz_think')!=='0'}catch(e){}  // 2.7：思考过程默认显示
+$('chkThink').checked=showThink;$('chat').classList.toggle('nothink',!showThink);
+$('chkThink').onchange=()=>{showThink=$('chkThink').checked;try{localStorage.setItem('gz_think',showThink?'1':'0')}catch(e){}
+  $('chat').classList.toggle('nothink',!showThink);if(!showThink)$('liveThink')&&($('liveThink').innerHTML='');else pull()};
+const ICO_COPY='<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
+      ICO_MAX='<svg viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>',
+      ICO_CHECK='<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function fmtSecs(s){s=Math.round(s||0);return s>=60?Math.floor(s/60)+' 分 '+(s%60)+' 秒':s+' 秒'}
+function fmtChars(n){n=n||0;return n>=10000?'约 '+(n/10000).toFixed(1)+' 万字':n+' 字'}
+function roleLabel(r){const x=(S.roles||[]).find(y=>y.role===r);return x?x.name:r}
+function toolbar(title,withMax){return `<div class="ttools"><span class="tit">${esc(title)}</span><button class="tib" data-tact="copy" title="复制全文">${ICO_COPY}</button>${withMax?`<button class="tib" data-tact="max" title="最大化">${ICO_MAX}</button>`:''}</div>`}
+function thinkBox(m){
+  const secs=m.think.secs!=null?m.think.secs:m.think.total_secs;
+  return `<div class="tthink" data-call="${esc(m.think.call)}" data-who="${esc(m.speaker)}"><button class="tbar" aria-expanded="false"><span class="arr">▸</span><span>已思考 ${fmtSecs(secs)} · ${fmtChars(m.think.chars)}</span><span class="tmore">点击展开</span></button>
+    <div class="tfull">${toolbar(esc(m.speaker)+' 的思考过程',true)}<div class="ttext">加载中……</div></div></div>`}
+function setBtnTip(b,t){const o=b.title;b.title=t;setTimeout(()=>b.title=o,1200)}
+async function copyText(t,b){let ok=true;try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{ok=document.execCommand('copy')}catch(_){ok=false}document.body.removeChild(a)}
+  if(b)copiedMark(b,ok)}
+// 2.6：复制后按钮本身变成对钩，约 1.5 秒后恢复（图标按钮换图标，文字按钮换文字）
+function copiedMark(b,ok){
+  if(b._restore){clearTimeout(b._timer);b._restore()}
+  const isIcon=b.classList.contains('tib'),old=b.innerHTML,oldTitle=b.title;
+  b._restore=()=>{b.innerHTML=old;b.title=oldTitle;b.classList.remove('done');b._restore=null};
+  if(isIcon){b.innerHTML=ok?ICO_CHECK:'!';}else{b.textContent=ok?'✓ 已复制':'复制失败'}
+  b.title=ok?'已复制':'复制失败';if(ok)b.classList.add('done');
+  b._timer=setTimeout(()=>b._restore&&b._restore(),1500)}
+// 2.6：整个聊天记录转成纯文本（不含思考过程、实时思考框和代码哈希明细）
+function chatText(){
+  const out=[];
+  for(const n of $('chat').children){
+    if(n.id==='liveThink'||n.classList.contains('tthink')||n.classList.contains('empty'))continue;
+    if(n.classList.contains('msg')){const w=n.querySelector('.who b'),b=n.querySelector('.bub');out.push((w?w.textContent:'')+'：'+(b?b.textContent:''));continue}
+    if(n.classList.contains('divider')){out.push('\n—— '+n.textContent.trim()+' ——');continue}
+    if(n.tagName==='DETAILS'){const s=n.querySelector('summary');out.push(s?s.textContent:'');continue}
+    const t=n.textContent.trim();if(t)out.push(t)}
+  return out.join('\n')}
+$('btnCopyAll').onclick=e=>{const t=chatText();if(!t){copiedMark(e.currentTarget,false);return}copyText(t,e.currentTarget)};
+function openBig(title,text){$('bigTit').textContent=title;$('bigTxt').textContent=text;show('mThink');$('bigTxt').scrollTop=0}
+document.addEventListener('click',async e=>{
+  const bar=e.target.closest('.tbar');
+  if(bar){const box=bar.closest('.tthink'),full=box.querySelector('.tfull'),open=bar.getAttribute('aria-expanded')==='true';
+    bar.setAttribute('aria-expanded',String(!open));full.classList.toggle('show',!open);bar.querySelector('.tmore').textContent=open?'点击展开':'点击收起';
+    if(!open&&!full.dataset.loaded){full.dataset.loaded='1';try{const r=await get('/api/thinking?p='+encodeURIComponent(cur)+'&call='+encodeURIComponent(box.dataset.call));
+      full.querySelector('.ttext').textContent=r.text||'（账本里没有这次调用的思考内容）'}catch(_){full.querySelector('.ttext').textContent='读取失败';delete full.dataset.loaded}}
+    return}
+  const bc=e.target.closest('[data-bcopy]');
+  if(bc){const m=bc.closest('.msg'),w=m.querySelector('.who b'),bub=m.querySelector('.bub');copyText((w?w.textContent+'：':'')+(bub?bub.textContent:''),bc);return}
+  const b=e.target.closest('[data-tact]');if(!b)return;
+  const box=b.closest('.tthink,.tlive');const txt=(box?box.querySelector('.ttext'):$('bigTxt'));
+  const act=b.dataset.tact;
+  if(act==='copy')copyText(txt.textContent,b);
+  else if(act==='max')openBig(box.querySelector('.tit').textContent,txt.textContent);
+  else if(act==='close')hide('mThink')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')hide('mThink')});
+function renderLive(live){
+  const L=$('liveThink');if(!L)return;
+  if(!showThink){L.innerHTML='';return}
+  // 2.11：每次调用一个实时思考框（以调用键为键），同一角色同时有几次调用就有几个
+  L.querySelectorAll('.tlive').forEach(b=>{if(!live[b.dataset.key])b.remove()});
+  for(const k of Object.keys(live)){
+    const r=live[k].role;
+    let b=L.querySelector('.tlive[data-key="'+CSS.escape(k)+'"]');
+    if(!b){b=document.createElement('div');b.className='tlive';b.dataset.key=k;b.dataset.role=r;b.dataset.stick='1';
+      b.innerHTML=`<div class="thead"><span><span class="tdot"></span><span class="tl"></span></span><span class="tc"></span></div>
+        <div class="ttools" style="border:0;padding:0 0 2px"><span class="tit">${esc(roleLabel(r))} 的思考过程 · ${esc(live[k].label||k)}</span><button class="tib" data-tact="copy" title="复制已显示的内容">${ICO_COPY}</button><button class="tib" data-tact="max" title="最大化">${ICO_MAX}</button></div>
+        <div class="ttext"></div><button class="tjump">回到最新 ↓</button>`;
+      const t=b.querySelector('.ttext'),j=b.querySelector('.tjump');
+      t.addEventListener('scroll',()=>{const at=t.scrollHeight-t.scrollTop-t.clientHeight<24;b.dataset.stick=at?'1':'0';j.classList.toggle('show',!at)});
+      j.onclick=()=>{t.scrollTop=t.scrollHeight;b.dataset.stick='1';j.classList.remove('show')};
+      L.appendChild(b)}
+    const d=live[k],rs=roleStates[r]||{},one=(rs.calls||[]).find(c=>c.key===k)||{};
+    b.querySelector('.tl').textContent=roleLabel(r)+' 正在思考（'+(d.label||k)+'）'+(d.note?' · '+d.note:'');
+    b.querySelector('.tc').textContent='已 '+fmtSecs(one.elapsed!=null?one.elapsed:rs.elapsed)+' · '+(d.chars||0).toLocaleString()+' 字'+((d.text||'').length<(d.chars||0)?'（只显示最近一段，想完后可展开看全文）':'');
+    const t=b.querySelector('.ttext');
+    if(t.textContent!==d.text){t.textContent=d.text;if(b.dataset.stick==='1')t.scrollTop=t.scrollHeight}}}
+async function pull(){
+  if(!cur)return;const n=cur;
+  let r;try{r=await get('/api/feed?p='+encodeURIComponent(n)+'&after='+last+(showThink?'&think=1':''))}catch(e){return}
+  if(n!==cur)return;
+  const stick=atBottom()||last===0;
+  if(last===0&&!r.messages.length)setChat('<div class="empty">这个项目还没开始。点下方「开始运行」。</div>');
+  else if(last===0)setChat('');
+  trusted=r.trusted!==false;$('trustWarn').style.display=trusted?'none':'block';
+  // 两次拉取同时在路上时（例如点了按钮又赶上定时刷新），同一条消息只显示一次
+  if(r.question)$('question').textContent=r.question;r.messages.forEach(m=>{if(m.seq>last){add(m);last=m.seq}});last=Math.max(last,r.last);
+  roleStates=r.role_states||{};roleUsage=r.role_usage||{};renderRoles();renderLive(r.live_thinking||{});
+  talk=r.talk||{};renderTalk();renderTiming(r.timing,r.running);
+  const pj=(S.projects||[]).find(x=>x.name===n);
+  if(r.running||(r.talk&&(r.talk.paused||r.talk.finished))){const lb=$('logbox'),ln=$('logboxNote');if(lb)lb.remove();if(ln)ln.remove()}  // 2.9：暂停不是出错，不显示"停在这里"
+  else if(r.log&&pj&&!pj.done&&!$('logbox')){
+    $('chat').insertAdjacentHTML('beforeend','<div class="note warn" id="logboxNote">上次运行停在这里，下面是它最后的输出（看不懂就截图给 Claude）：</div><pre class="log" id="logbox">'+esc(r.log.slice(-1500))+'</pre>')}
+  if(stick)$('chat').scrollTop=$('chat').scrollHeight}
+$('btnNew').onclick=()=>{const q=S.questions||[];
+  $('qsel').innerHTML=q.map(x=>`<option value="${esc(x.file)}">${esc(x.question)}（${x.count} 条）</option>`).join('')+'<option value="__demo__">演示（虚构数据，不联网、不花钱）</option>';
+  const setName=()=>{const v=$('qsel').value;$('pname').value=v==='__demo__'?'演示项目':v.replace(/^.*\//,'').replace(/\.json$/,'')+'项目'};
+  const warnQ=()=>{const x=q.find(y=>y.file===$('qsel').value);
+    $('qwarn').textContent=x&&!x.trusted&&x.task!=='final_answer'?'⚠ 这个题目文件没有可信网站名单（trusted_sites）：独立核验不会启动，任何条目都判不成"查到"。':''};
+  const pick=()=>{const x=q.find(y=>y.file===$('qsel').value);const box=$('pickBox');
+    if(!x||!x.items){box.style.display='none';$('pickList').innerHTML='';return}
+    box.style.display='block';
+    $('pickList').innerHTML=x.items.map((it,i)=>`<label style="display:block;margin:2px 0;font-weight:normal"><input type="checkbox" data-pick="${esc(it.id)}" style="width:auto" ${i===0?'checked':''}> ${esc(it.id)}　${esc(it.label)}</label>`).join('');
+    const cnt=()=>{$('pickCnt').textContent='共 '+x.items.length+' 题，已勾选 '+document.querySelectorAll('#pickList [data-pick]:checked').length+' 题'};
+    $('pickList').onchange=cnt;cnt();
+    $('pickAll').onclick=()=>{document.querySelectorAll('#pickList [data-pick]').forEach(e=>e.checked=true);cnt()};
+    $('pickNone').onclick=()=>{document.querySelectorAll('#pickList [data-pick]').forEach(e=>e.checked=false);cnt()}};
+  $('qsel').onchange=()=>{setName();warnQ();pick()};setName();warnQ();pick();$('newErr').textContent='';show('mNew')};
+$('btnCreate').onclick=async()=>{$('btnCreate').disabled=true;$('newErr').textContent='正在创建…';
+  const qx=(S.questions||[]).find(y=>y.file===$('qsel').value);let picked=null;
+  if(qx&&qx.items){picked=[...document.querySelectorAll('#pickList [data-pick]:checked')].map(e=>e.dataset.pick);
+    if(!picked.length){$('btnCreate').disabled=false;$('newErr').textContent='至少勾选一道题';return}}
+  const r=await post('/api/new',{name:$('pname').value.trim(),question:$('qsel').value,picked});$('btnCreate').disabled=false;
+  if(!r.ok){$('newErr').textContent=r.msg;return}hide('mNew');await refresh();select(r.name)};
+$('btnPing').onclick=async()=>{await post('/api/ping');refresh()};
+$('btnRun').onclick=async()=>{if(!cur)return;
+  if(!trusted&&!confirm('这个项目没有可信网站名单：独立核验不会启动，任何条目都判不成"查到"。\n\n确定仍要运行吗？'))return;
+  if(memDirty){const ok=await saveMem();if(!ok)return}
+  $('btnRun').disabled=true;const r=await post('/api/run',{name:cur});
+  if(!r.ok)alert(r.msg);document.getElementById('logbox')?.remove();refresh()};
+$('btnStop').onclick=async()=>{if(!cur)return;if(!confirm('停止后，已完成的内容都保留，之后点“继续运行”可以接着跑；正在等待回复的调用会作废（已收到的思考会存进账本，只供查看）。\n\n确定要停止吗？'))return;
+  $('btnStop').disabled=true;const r=await post('/api/stop',{name:cur});$('btnStop').disabled=false;if(!r.ok)alert(r.msg);refresh()};
+$('btnCon').onclick=async()=>{const r=await get('/api/conclusion?p='+encodeURIComponent(cur));
+  $('conTitle').textContent='结论 · '+cur;$('conBody').innerHTML=r.text?md(r.text):'还没有结论。';show('mCon')};
+$('btnDetail').onclick=async()=>{const r=await post('/api/detail',{name:cur});if(r.ok)setTimeout(()=>window.open(r.url,'_blank'),900)};
+// 1.5：在窗口里选记忆模式，由程序写回 设置.json
+const MEMDESC={'全局':'看得到所有生产者之前的结果和意见原文','固定':'只看下面勾选的角色、最近几轮','全新':'每轮从头开始；意见里不含对方的数值和出处'};
+function renderMem(){
+  const M=$('mem');if(S.error||!S.roles||!S.roles.length){M.innerHTML='<div class="quiet" style="margin:0 6px">设置文件读不出来，暂时不能选</div>';return}
+  const prods=S.roles.filter(r=>r.kind==='生产者');
+  M.innerHTML=S.roles.filter(r=>r.kind!=='解说者').map(r=>{const m=r.memory||{};const isP=r.kind==='生产者';
+    const modes=isP?['全局','固定','全新']:['全局','全新'];const mode=modes.includes(m.mode)?m.mode:modes[0];
+    const see=m.see||['self'];
+    const boxes=isP?[['self','自己']].concat(prods.filter(x=>x.role!==r.role).map(x=>[x.role,x.name])).map(([v,t])=>
+      `<label><input type="checkbox" value="${esc(v)}" ${see.includes(v)?'checked':''}> ${esc(t)}</label>`).join(''):'';
+    return `<div class="mrow" data-r="${esc(r.role)}"><div class="mh">${esc(r.name)}<span class="pill">${esc(r.kind)}</span></div>
+      <select class="mmode">${modes.map(x=>`<option ${x===mode?'selected':''}>${x}</option>`).join('')}</select>
+      <div class="mdesc">${esc(MEMDESC[mode])}</div>
+      ${isP?`<div class="mfix" style="display:${mode==='固定'?'block':'none'}">看：${boxes}<br>最近 <input type="number" class="mrounds" min="1" max="${S.max_rounds||6}" value="${esc(m.rounds||1)}"> 轮</div>`:''}
+      ${m.bad?'<div class="err">设置.json 里这一项写得不对，保存后会改正</div>':''}</div>`}).join('');
+  M.querySelectorAll('.mrow').forEach(row=>{
+    const onchg=()=>{memDirty=true;row.classList.add('dirty');$('btnMem').disabled=false;$('memMsg').style.color='var(--warn)';
+      $('memMsg').textContent='改了还没保存。点「保存记忆模式」，或者直接点「开始运行」会先自动保存。';
+      const mode=row.querySelector('.mmode').value;row.querySelector('.mdesc').textContent=MEMDESC[mode];
+      const fx=row.querySelector('.mfix');if(fx)fx.style.display=mode==='固定'?'block':'none'};
+    row.querySelectorAll('select,input').forEach(el=>el.onchange=onchg)});
+  $('btnMem').disabled=true}
+async function saveMem(){
+  const roles={};document.querySelectorAll('#mem .mrow').forEach(row=>{const mode=row.querySelector('.mmode').value;const m={mode};
+    if(mode==='固定'){m.see=[...row.querySelectorAll('.mfix input[type=checkbox]:checked')].map(x=>x.value);
+      m.rounds=parseInt(row.querySelector('.mrounds').value||'0',10)}
+    roles[row.dataset.r]=m});
+  $('btnMem').disabled=true;let r;try{r=await post('/api/memory',{roles})}catch(e){r={ok:false,msg:'没连上程序：'+e}}
+  $('memMsg').style.color=r.ok?'var(--ok)':'var(--bad)';$('memMsg').textContent=r.msg||'';
+  if(!r.ok){$('btnMem').disabled=false;return false}
+  memDirty=false;await refresh();return true}
+$('btnMem').onclick=saveMem;
+function md(t){const L=t.split('\n');let h='',i=0;
+  while(i<L.length){const l=L[i];
+    if(l.startsWith('|')){const rows=[];while(i<L.length&&L[i].startsWith('|')){rows.push(L[i]);i++}
+      const cells=r=>r.replace(/^\||\|$/g,'').split('|').map(x=>x.trim());
+      h+='<table><tr>'+cells(rows[0]).map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr>'+rows.slice(2).map(r=>'<tr>'+cells(r).map(c=>'<td>'+esc(c)+'</td>').join('')+'</tr>').join('')+'</table>';continue}
+    if(l.startsWith('## '))h+='<h2>'+esc(l.slice(3))+'</h2>';else if(l.startsWith('# '))h+='<h1>'+esc(l.slice(2))+'</h1>';
+    else if(l.startsWith('- '))h+='<div>• '+esc(l.slice(2))+'</div>';else if(l.trim())h+='<p>'+esc(l)+'</p>';i++}
+  return h}
+
+// ---------- 2.1 建题窗口 ----------
+let adm={items:[],checks:[],file:null,text:null,mapping:null};
+function tabAdm(h){$('admFile').style.display=h?'none':'';$('admHand').style.display=h?'':'none';
+  $('tabFile').classList.toggle('on',!h);$('tabHand').classList.toggle('on',h)}
+$('btnAdm').onclick=()=>{adm={items:[],checks:[],file:null,text:null,mapping:null};$('admMap').innerHTML='';$('admChk').innerHTML='';$('admErr').textContent='';$('admF').value='';tabAdm(false);show('mAdm')};
+$('tabFile').onclick=()=>tabAdm(false);$('tabHand').onclick=()=>tabAdm(true);
+$('admF').onchange=async e=>{const f=e.target.files[0];if(!f)return;adm.file=f.name;adm.text=await f.text();adm.mapping=null;await admCheck()};
+$('hGo').onclick=async()=>{const p=$('hProb').value.trim(),g=$('hGold').value.trim();adm.file=null;adm.text=null;
+  adm.items=[{id:'Q001',name:'',problem:p,gold:g}];await admCheck(true)};
+async function admCheck(useItems){
+  $('admErr').textContent='';
+  const r=await post('/api/adm/check',useItems?{items:adm.items}:{filename:adm.file,text:adm.text,mapping:adm.mapping});
+  if(!r.ok){$('admErr').textContent=r.msg;return}
+  if(r.stage==='map'){$('admChk').innerHTML='';
+    const opt=(v)=>'<option value="">（没有）</option>'+r.columns.map(c=>`<option ${c===v?'selected':''}>${esc(c)}</option>`).join('');
+    $('admMap').innerHTML=`<h4>读到 ${r.count} 行。请告诉程序哪一列是什么：</h4>
+      <label>题面所在列（必填）</label><select id="mpP">${opt(r.mapping.problem)}</select>
+      <label>标准答案所在列（必填）</label><select id="mpG">${opt(r.mapping.gold)}</select>
+      <label>编号列（可选）</label><select id="mpI">${opt(r.mapping.id)}</select>
+      <label>标题/类别列（可选）</label><select id="mpN">${opt(r.mapping.name)}</select>
+      <div class="row"><button class="primary" id="mpGo">确定</button></div>`;
+    $('mpGo').onclick=()=>{adm.mapping={problem:$('mpP').value||null,gold:$('mpG').value||null,id:$('mpI').value||null,name:$('mpN').value||null};
+      if(!adm.mapping.problem||!adm.mapping.gold){$('admErr').textContent='题面和标准答案这两列必须选';return}admCheck()};return}
+  $('admMap').innerHTML='';adm.items=r.items;adm.checks=r.checks;renderAdm(r.summary)}
+function renderAdm(sm){
+  const red=adm.checks.filter(c=>c.level==='红'),redIds=[...new Set(red.map(c=>c.id))];
+  const byId={};adm.checks.forEach(c=>(byId[c.id]=byId[c.id]||[]).push(c));
+  const flagged=adm.items.filter(it=>byId[it.id]).sort((a,b)=>(byId[b.id].some(c=>c.level==='红')?1:0)-(byId[a.id].some(c=>c.level==='红')?1:0));
+  const rows=flagged.slice(0,200).map(it=>{const cs=byId[it.id],isRed=cs.some(c=>c.level==='红');
+    return `<tr><td>${esc(it.id)}</td><td>${cs.map(c=>`<div class="lv-${c.level}">${c.level}　${esc(c.msg)}</div>`).join('')}<div class="hintx">${esc(it.problem.slice(0,80))}</div></td>
+      <td>${isRed?`<label><input type="checkbox" class="ack" value="${esc(it.id)}"> 我已知道</label><br><button class="drop" data-i="${esc(it.id)}">剔除这题</button>`:''}</td></tr>`}).join('');
+  $('admChk').innerHTML=`<h4>自检结果</h4><div class="sumbar"><span>共 ${sm.总数} 题</span><span class="lv-红">红 ${sm.红}</span><span class="lv-黄">黄 ${sm.黄}</span><span class="lv-绿">绿 ${sm.绿}</span></div>
+    <div class="hintx">红：几乎肯定有问题，提交前必须逐条点「我已知道」或剔除；黄：提醒，可直接提交；绿：没发现问题。</div>
+    ${rows?`<table><tr><th>题</th><th>问题</th><th></th></tr>${rows}</table>`:'<div class="lv-绿">没有发现问题。</div>'}
+    <label>只取前几题（建议先 10～20 题试跑）</label><input id="aN" type="number" min="1" value="${Math.min(20,adm.items.length)}">
+    <label>项目编号（英文、数字、下划线；也是项目名和文件名）</label><input id="aId" maxlength="32" placeholder="例如 ArXivMath_2026_09">
+    <label>这批题想问什么（会写进报告）</label><input id="aQ" value="这批数学题，模型能否给出正确的最终答案；互查是否比单独作答更可靠">
+    <label>来源（如 MathArena ArXivMath 2026-09）</label><input id="aS"><label>许可（如 CC BY-SA 4.0）</label><input id="aL">
+    <div class="row"><button class="primary" id="aGo">提交并创建项目</button></div>`;
+  document.querySelectorAll('.drop').forEach(b=>b.onclick=async()=>{adm.items=adm.items.filter(x=>x.id!==b.dataset.i);await admCheck(true)});
+  $('aGo').onclick=async()=>{const n=parseInt($('aN').value||'0',10);const ack=[...document.querySelectorAll('.ack:checked')].map(x=>x.value);
+    const items=adm.items.slice(0,n);const ids=new Set(items.map(x=>x.id));
+    const r=await post('/api/adm/make',{project_id:$('aId').value.trim(),question:$('aQ').value,items,source:$('aS').value,license:$('aL').value,acknowledged:ack.filter(x=>ids.has(x))});
+    if(!r.ok){$('admErr').textContent=r.msg;return}
+    hide('mAdm');await refresh();select(r.name)}}
+// ---------- 2.1 待人工判断 ----------
+async function loadPend(){if(!cur)return;const r=await get('/api/pending?p='+encodeURIComponent(cur));
+  $('btnPend').style.display=r.items.length?'':'none';$('btnPend').textContent='待人工判断（'+r.items.length+'）';return r.items}
+$('btnPend').onclick=async()=>{const it=await loadPend();renderPend(it);show('mPend')};
+function renderPend(items){
+  $('pendBody').innerHTML=items.length?items.map((x,i)=>`<div class="pend"><b>${esc(x.item)} · ${esc(x.target)}</b>　模型答案：${esc(x.answer)}　标准答案：${esc(x.gold)}
+    <textarea readonly id="pt${i}">${esc(x.prompt)}</textarea>
+    <div class="row"><button data-c="${i}">复制提示词</button><button data-k="${esc(x.key)}" data-v="对">判为对</button><button data-k="${esc(x.key)}" data-v="错">判为错</button></div></div>`).join(''):'已经全部判完。';
+  $('pendBody').querySelectorAll('button[data-c]').forEach(b=>b.onclick=async()=>{const t=$('pt'+b.dataset.c);t.select();
+    copyText(t.value,b)});
+  $('pendBody').querySelectorAll('button[data-k]').forEach(b=>b.onclick=async()=>{const r=await post('/api/judge',{name:cur,key:b.dataset.k,verdict:b.dataset.v});
+    if(r.ok){const it=await loadPend();renderPend(it)}else alert(r.msg)})}
+// ---------- 2.1 参数面板 ----------
+$('btnPar').onclick=async()=>{const r=await get('/api/params');$('parMsg').textContent='';
+  if(!r.ok){$('parBody').innerHTML='';$('parMsg').textContent=r.msg;show('mPar');return}
+  $('parBody').innerHTML='<h4>流程参数</h4>'+r.schema.map(p=>p.type==='choice'
+    ?`<div class="prow"><div>${esc(p.label)}<div class="hintx">${esc(p.desc)}</div></div><select data-p="${p.key}">${p.min.map(o=>`<option value="${esc(o)}" ${o===r.values[p.key]?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`
+    :p.type==='bool'
+    ?`<div class="prow"><div>${esc(p.label)}<div class="hintx">${esc(p.desc)}</div></div><input type="checkbox" data-p="${p.key}" ${r.values[p.key]?'checked':''}></div>`
+    :`<div class="prow"><div>${esc(p.label)}<div class="hintx">${esc(p.desc)}（${p.min}～${p.max}）</div></div><input type="number" data-p="${p.key}" min="${p.min}" max="${p.max}" value="${esc(r.values[p.key])}"></div>`).join('')+
+    '<h4>检索服务</h4><select id="parEng">'+r.engines.map(e=>`<option value="${e.key}" ${e.key===r.engine?'selected':''} ${e.live?'':'disabled'}>${esc(e.label)}</option>`).join('')+'</select>'+
+    '<h4>各角色的模型知识截止时间（可留空）</h4><div class="hintx">写成 2025-06 这样的年月。用来判断题目是否晚于模型的训练截止，避免题目已被模型见过。</div>'+
+    r.roles.map(x=>`<div class="prow"><div>${esc(x.name)}（${esc(x.role)}）</div><input data-c="${esc(x.role)}" value="${esc(x.cutoff)}" placeholder="2025-06"></div>`).join('')+
+    '<h4>各角色的深度思考</h4><div class="hintx">数学难题建议全部打开（更慢更贵，但能发挥模型的实力）；整理资料类的题可以关掉。强度（DeepSeek、Kimi、豆包支持）：low / medium / high / max，max 最强最慢；Kimi K3 的思考关不掉，只能调强度。</div>'+
+    r.roles.map(x=>`<div class="prow"><div>${esc(x.name)}（${esc(x.role)}）</div><div>${x.thinking_fixed?`<label style="display:inline"><input type="checkbox" data-t="${esc(x.role)}" checked disabled style="width:auto"> 始终开启</label>`:`<label style="display:inline"><input type="checkbox" data-t="${esc(x.role)}" ${x.thinking?'checked':''} style="width:auto"> 开启</label>`}${x.effort_ok?` 强度 <select data-e="${esc(x.role)}"><option value="">默认</option><option value="low" ${x.effort==='low'?'selected':''}>low</option><option value="medium" ${x.effort==='medium'?'selected':''}>medium</option><option value="high" ${x.effort==='high'?'selected':''}>high</option><option value="max" ${x.effort==='max'?'selected':''}>max</option></select>`:''}</div></div>`).join('');
+  parCodeOrig=!!r.values.allow_code_run;show('mPar')};
+let parCodeOrig=false;
+$('parSave').onclick=async()=>{const params={};document.querySelectorAll('#parBody [data-p]').forEach(el=>params[el.dataset.p]=el.type==='checkbox'?el.checked:el.value);
+  if(params.allow_code_run===true&&!parCodeOrig&&!confirm('你打开了「允许运行模型写的代码」。\n\n这些代码会在你的电脑上运行。运行器只有超时、输出上限、临时目录、不传密钥，并不是安全隔离：模型写的代码理论上能读写你的文件、联网。\n\n确定要打开吗？'))return;
+  const cutoffs={};document.querySelectorAll('#parBody [data-c]').forEach(el=>cutoffs[el.dataset.c]=el.value.trim());
+  const thinking={};document.querySelectorAll('#parBody [data-t]').forEach(el=>{const sel=document.querySelector('#parBody [data-e="'+el.dataset.t+'"]');thinking[el.dataset.t]={on:el.checked,effort:sel?sel.value:''}});
+  const r=await post('/api/params',{params,engine:$('parEng')?$('parEng').value:null,cutoffs,thinking});
+  $('parMsg').style.color=r.ok?'var(--ok)':'var(--bad)';$('parMsg').textContent=r.msg||'';if(r.ok)refresh()};
+// 2.9.1 输入法：点进输入框后的半秒、以及输入法正在拼字时，定时刷新先停一拍（浏览器把输入法接到输入框上要几十毫秒，
+// 这时页面别忙）。只能减少页面这边添的乱，浏览器和输入法之间的空档网页管不了。
+let imeHold=0,imeComposing=false;
+function imeBusy(){return imeComposing||Date.now()<imeHold}
+$('say').addEventListener('focus',()=>{imeHold=Date.now()+500});
+$('say').addEventListener('compositionstart',()=>{imeComposing=true});
+$('say').addEventListener('compositionend',()=>{imeComposing=false});
+$('say').addEventListener('blur',()=>{imeComposing=false;renderTalk()});  // 离开输入框后再补上没更新的提示文字
+// ---------- 2.10 解说者 ----------
+let xpKey=null,xpBusy=false;
+function xpOpen(){return document.body.classList.contains('xpopen')}
+function setXp(open){document.body.classList.toggle('xpopen',open);try{localStorage.setItem('xpopen',open?'1':'')}catch(e){}if(open)loadXp(true)}
+async function loadXp(force){
+  if(!xpOpen())return;const k=cur||'';if(!force&&k===xpKey&&xpBusy)return;
+  let r;try{r=await get('/api/explain'+(cur?'?p='+encodeURIComponent(cur):''))}catch(e){return}
+  if((cur||'')!==k)return;xpKey=k;
+  $('xpModel').textContent=r.configured?(r.name+(r.model?' · '+r.model:'')):'';
+  const L=$('xpLog');const stick=L.scrollHeight-L.scrollTop-L.clientHeight<60;
+  if(!r.configured){L.innerHTML='<div class="xm"><div class="xb">还没有设置解说者。<br>在数据文件夹的 设置.json 里，roles 下加一个 kind 为「解说者」的角色（写法见 examples/设置.json 里的 X1）。<br><br>解说者只负责用大白话讲解过程，<b>便宜的模型就完全够用</b>（不用开深度思考），不必用贵的。</div></div>';return}
+  L.innerHTML=(r.history.length?'':'<div class="quiet" style="margin:6px 2px">'+(cur?'还没有问过。':'还没选项目：可以先问它题目怎么问清楚。题目由你自己在主窗口输入框里提交。')+'</div>')+
+    r.history.map(h=>`<div class="xm ${h.who==='用户'?'u':h.who==='程序'?'e':''}"><div class="xw">${h.who==='用户'?'你':esc(h.who)} · ${esc((h.ts||'').replace('T',' '))}</div><div class="xb">${esc(h.text)}</div></div>`).join('');
+  if(stick||force)L.scrollTop=L.scrollHeight}
+async function xpSend(){const t=$('xpSay').value.trim();if(!t||xpBusy)return;xpBusy=true;$('xpSend').disabled=true;$('xpMsg').textContent='解说者正在看记录……';
+  const L=$('xpLog');L.insertAdjacentHTML('beforeend',`<div class="xm u"><div class="xw">你</div><div class="xb">${esc(t)}</div></div>`);L.scrollTop=L.scrollHeight;$('xpSay').value='';
+  let r;try{r=await post('/api/explain',{name:cur||'',text:t})}catch(e){r={ok:false,msg:String(e)}}
+  xpBusy=false;$('xpSend').disabled=false;$('xpMsg').textContent=r.ok?'':(r.msg||'没有回答');await loadXp(true)}
+$('btnXp').onclick=()=>setXp(!xpOpen());$('xpClose').onclick=()=>setXp(false);$('xpSend').onclick=xpSend;
+$('xpSay').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();xpSend()}});
+['focus'].forEach(ev=>$('xpSay').addEventListener(ev,()=>{imeHold=Date.now()+500}));
+$('xpSay').addEventListener('compositionstart',()=>{imeComposing=true});$('xpSay').addEventListener('compositionend',()=>{imeComposing=false});
+try{if(localStorage.getItem('xpopen')==='1')setXp(true)}catch(e){}
+setInterval(()=>{if(!imeBusy()&&!xpBusy)loadXp(false)},4000);
+setInterval(()=>{if(!imeBusy())loadPend()},5000);
+refresh();setInterval(()=>{if(!imeBusy())refresh()},3000);setInterval(()=>{if(!imeBusy())pull()},1200);
+</script></body></html>

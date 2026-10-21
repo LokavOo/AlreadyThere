@@ -1,0 +1,178 @@
+{
+  "_说明": "2.6 国产 3-2-1 阵容（2026-10-03 用户确定）：生产者 Kimi K3 / DeepSeek V4.1-Flash / 腾讯混元 Hy4 preview，审查者 千问 Qwen3.8-Max / 智谱 GLM-5.3，找茬者 豆包 Seed 2.1 Pro（2.7 起出场；方舟的 max_tokens 只管回答、不含思考，所以 F1 标了 max_tokens_excludes_thinking，按 32768 原样传，思考不限——用户 2026-10-03 定）。GLM-5.3 的思考强度仍是 max（用户定：再试一次，不行再调）。各家参数按 2026-10-03 查到的官方文档填写：Kimi K3 输出上限字段 max_completion_tokens、思考关不掉；DeepSeek 旧名 deepseek-v4-pro 自 2026-09-14 起已被官方转到 V4.1-Flash，这里直接写新名 deepseek-flash；千问用 enable_thinking 打开思考、输出上限用 max_completion_tokens；智谱 GLM-5.3 思考关不掉，强度 low/high/max；混元 hy4-preview 默认开思考，强度 high/low，最大输出约 64K。豆包的 model 沿用你 1.1 时填过的 ID，请到火山方舟控制台核对。密钥不写在这里，写在 密钥.env。",
+  "roles": {
+    "P1": {
+      "kind": "生产者",
+      "provider": "openai_compat",
+      "base_url": "https://api.moonshot.cn/v1",
+      "key_name": "MOONSHOT_API_KEY",
+      "model": "kimi-k3",
+      "series": "Kimi",
+      "context_window": 1000000,
+      "max_tokens": 131072,
+      "max_tokens_field": "max_completion_tokens",
+      "extra": {
+        "reasoning_effort": "max"
+      },
+      "memory": {
+        "mode": "固定",
+        "see": [
+          "self"
+        ],
+        "rounds": 1
+      }
+    },
+    "P2": {
+      "kind": "生产者",
+      "provider": "openai_compat",
+      "base_url": "https://api.deepseek.com",
+      "key_name": "DEEPSEEK_API_KEY",
+      "model": "deepseek-flash",
+      "series": "DeepSeek",
+      "context_window": 1000000,
+      "max_tokens": 131072,
+      "extra": {
+        "thinking": {
+          "type": "enabled"
+        },
+        "reasoning_effort": "max"
+      },
+      "memory": {
+        "mode": "固定",
+        "see": [
+          "self"
+        ],
+        "rounds": 1
+      }
+    },
+    "P3": {
+      "kind": "生产者",
+      "provider": "openai_compat",
+      "base_url": "https://tokenhub.tencentmaas.com/v1",
+      "key_name": "HUNYUAN_API_KEY",
+      "model": "hy4-preview",
+      "series": "混元",
+      "context_window": 1000000,
+      "max_tokens": 64000,
+      "extra": {
+        "reasoning_effort": "high",
+        "thinking": {
+          "type": "enabled"
+        }
+      },
+      "memory": {
+        "mode": "固定",
+        "see": [
+          "self"
+        ],
+        "rounds": 1
+      }
+    },
+    "R1": {
+      "kind": "审查者",
+      "provider": "openai_compat",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "key_name": "DASHSCOPE_API_KEY",
+      "model": "qwen3.8-max",
+      "series": "千问",
+      "context_window": 1000000,
+      "max_tokens": 131072,
+      "max_tokens_field": "max_completion_tokens",
+      "extra": {
+        "enable_thinking": true
+      },
+      "memory": {
+        "mode": "全局"
+      }
+    },
+    "R2": {
+      "kind": "审查者",
+      "provider": "openai_compat",
+      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "key_name": "ZHIPU_API_KEY",
+      "model": "glm-5.3",
+      "series": "智谱",
+      "context_window": 1000000,
+      "max_tokens": 131072,
+      "extra": {
+        "thinking": {
+          "type": "enabled"
+        },
+        "reasoning_effort": "max"
+      },
+      "memory": {
+        "mode": "全局"
+      }
+    },
+    "F1": {
+      "kind": "找茬者",
+      "provider": "openai_compat",
+      "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+      "key_name": "ARK_API_KEY",
+      "model": "doubao-seed-2-1-pro-260915",
+      "series": "豆包",
+      "context_window": 128000,
+      "max_tokens": 32768,
+      "max_tokens_excludes_thinking": true,
+      "extra": {
+        "thinking": {
+          "type": "enabled"
+        },
+        "reasoning_effort": "high"
+      },
+      "memory": {
+        "mode": "全新"
+      }
+    },
+    "X1": {
+      "kind": "解说者",
+      "_说明": "解说者：用大白话向你讲解过程，它的话不进流程、不是验证。这份工作便宜的模型完全够用，不用开深度思考，不必用贵的模型。context_window 写这个模型的上下文大小（token），程序据此决定一次给它看多少记录。",
+      "provider": "openai_compat",
+      "base_url": "https://api.deepseek.com",
+      "key_name": "DEEPSEEK_API_KEY",
+      "model": "deepseek-flash",
+      "series": "DeepSeek",
+      "context_window": 128000,
+      "max_tokens": 4000,
+      "extra": {
+        "thinking": {
+          "type": "disabled"
+        }
+      }
+    }
+  },
+  "search": {
+    "engine": "tavily"
+  },
+  "params": {
+    "retry_batch1": [
+      10,
+      10,
+      10
+    ],
+    "retry_batch2": [
+      60,
+      120,
+      240
+    ],
+    "format_retry_max": 3,
+    "first_packet_timeout_seconds": 660,
+    "stream_idle_timeout_seconds": 120,
+    "call_max_total_seconds": 7200,
+    "max_rounds": 6,
+    "search_results_per_query": 3,
+    "items_per_call": 6,
+    "max_sources_shown": 4,
+    "independent_sources": 2,
+    "max_concurrency": 3,
+    "review_rounds": 5,
+    "allow_code_run": true,
+    "code_timeout_seconds": 60,
+    "answer_max_tokens": 65536,
+    "output_language": "中文",
+    "counter_check": false,
+    "form_stage": false,
+    "form_rounds": 5,
+    "form_auto_release": false
+  }
+}

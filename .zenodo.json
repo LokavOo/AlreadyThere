@@ -1,5 +1,5 @@
 {
-  "title": "观者自在 (AlreadyThere)：多模型互查的资料整理程序（原型第一期） / AlreadyThere: a multi-model cross-verification program for fact compilation (prototype phase 1)",
+  "title": "观者自在 (AlreadyThere)：多模型互查程序 / AlreadyThere: a multi-model cross-verification program",
   "upload_type": "software",
   "creators": [
     {
@@ -7,7 +7,7 @@
     }
   ],
   "license": "Apache-2.0",
-  "description": "<p>多个不同厂商的大模型各自检索、各自作答，另一模型逐条审查；凡程序能核对的一律由程序核对；全过程写入哈希链账本。原型第一期（1.x）。测试结果与前提条件见 README 与“测试记录”。</p><p>Several LLMs from different vendors search and answer independently while another model reviews each entry; everything checkable is checked by the program; the whole process is recorded in a hash-chained ledger. Prototype phase 1 (1.x). See the README and test records for results and conditions.</p><p>AI collaboration: design ideas formed in the author's conversations with DeepSeek, Doubao, Claude and ChatGPT; code written by Claude (Anthropic); DeepSeek, Kimi and Doubao served as program roles in test runs. Models are not listed as authors.</p>",
+  "description": "<p>多个不同厂商的大模型分工合作：生产者各自独立作答，审查者不做题、只核对比对并独立验证，找茬者专门找各方可能共同漏掉的地方；凡程序能核对的一律由程序核对；只有各方真的一致才算闭合，不按多数；全过程写入哈希链账本。2.x 增加了数学最终答案题；1.x 起的资料整理仍可使用。测试结果及其前提条件见 README 与“测试记录”；尚未实现的内容见“待实现”。</p><p>Several LLMs from different vendors work together, each with its own role: producers answer independently; reviewers do not solve the problem but check and compare every answer sheet and verify independently; a fault-finder looks specifically for blind spots that all parties may share. Everything the program can check, it checks itself; a question is closed only when all parties genuinely agree, never by majority vote; the whole process is recorded in a hash-chained ledger. Version 2.x adds math problems with a final answer; fact compilation, available since 1.x, can still be used. See the README and 测试记录/ (test records, in Chinese) for the results and the conditions under which they were obtained, and 待实现.md (to-do list, in Chinese) for what is not yet implemented.</p><p>AI 协作声明：设计思想是在作者与 DeepSeek、豆包、Claude、ChatGPT 的对话中形成的；程序代码由 Claude（Anthropic）编写；在实跑中担任程序角色的模型：1.x 为 DeepSeek、Kimi、豆包，2.x 为 Kimi、DeepSeek、腾讯混元、千问、智谱 GLM、豆包。模型不列为作者。</p><p>AI collaboration: design ideas took shape in the author's conversations with DeepSeek, Doubao, Claude and ChatGPT; code written by Claude (Anthropic); models that filled the program's roles in real runs: DeepSeek, Kimi, Doubao (1.x); Kimi, DeepSeek, Tencent Hunyuan, Qwen, Zhipu GLM, Doubao (2.x). Models are not listed as authors.</p><p>名称声明：“观者自在”“AlreadyThere”是本项目的中文名和英文名，“且待云开见月明”是本项目的标语。本项目与任何同名或名称相似的第三方均无关联，也未获得其授权或认可。 Name statement: “观者自在” and “AlreadyThere” are the Chinese and English names of this project, and “且待云开见月明” is its motto. This project is not affiliated with, and has not been authorized or endorsed by, any third party with the same or a similar name.</p>",
   "related_identifiers": [
     {
       "identifier": "10.5281/zenodo.22938084",
@@ -19,6 +19,7 @@
     "large language models",
     "cross-verification",
     "fact compilation",
+    "math problems",
     "hallucination",
     "audit trail"
   ]

@@ -25,12 +25,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from guanzhe import report  # noqa: E402
-from guanzhe.__main__ import load_settings_from_obj  # noqa: E402
-from guanzhe.flow import Flow  # noqa: E402
-from guanzhe.models import FatalCallError, ModelHub  # noqa: E402
-from guanzhe.retrieval import Retriever  # noqa: E402
-from guanzhe.store import Project  # noqa: E402
+from alreadythere import report  # noqa: E402
+from alreadythere.__main__ import load_settings_from_obj  # noqa: E402
+from alreadythere.flow import Flow  # noqa: E402
+from alreadythere.models import FatalCallError, ModelHub  # noqa: E402
+from alreadythere.retrieval import Retriever  # noqa: E402
+from alreadythere.store import Project  # noqa: E402
 
 
 class NoCall:
@@ -79,7 +79,7 @@ def replay(orig_dir, out_dir):
     for row in orig.conn.execute("SELECT * FROM calls"):
         p.conn.execute(f"INSERT INTO calls ({','.join(cols)}) VALUES ({','.join('?' * len(cols))})", tuple(row))
     p.conn.commit()
-    keys = {s["provider"] + "|" + s.get("base_url", "") for s in st["roles"].values()}
+    keys = {s["provider"] + "|" + s.get("base_url", "") + "|" + s.get("key_name", "") for s in st["roles"].values()}
     hub = ModelHub(p, st, {}, providers={k: NoCall() for k in keys}, sleep=lambda s: None)
     prompts = {}  # 记下每次调用发给模型的提示词，用来和旧代码的重放、以及原项目逐字比对
     orig_call = hub.call_json
