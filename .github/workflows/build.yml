@@ -1,4 +1,4 @@
-# 测试与发布（1.9 起；2.11 改包名 alreadythere、加程序图标）：每次推送在 Windows、Linux、Mac 上跑全部测试；
+# 测试与发布（1.9 起；2.11 改包名 alreadythere、加程序图标、打 exe 不再等 Mac 测试）：每次推送在 Windows、Linux、Mac 上跑全部测试；
 # 发布（Release）时再在 Windows 上生成 exe，实际跑一遍演示项目，通过后才把下载包附到发布页。
 name: 测试与发布
 
@@ -26,7 +26,8 @@ jobs:
           PYTHONIOENCODING: utf-8
 
   exe:
-    needs: test
+    # 2.11：打 exe 不再等三个系统的测试全部结束——GitHub 的 Mac 机器经常排不上，会把 exe 一起卡住。
+    # exe 是 Windows 程序，这里在打包前自己先跑一遍 Windows 上的全部测试，不过就不打包；Mac、Linux 的测试照常在上面跑、照常显示结果。
     if: github.event_name == 'release'
     runs-on: windows-latest
     permissions:
@@ -36,6 +37,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - name: 打包前先在 Windows 上跑全部测试
+        run: python -m unittest discover -s tests -v
+        env:
+          PYTHONIOENCODING: utf-8
       - name: 打包（文件夹形式）
         run: |
           pip install pyinstaller
